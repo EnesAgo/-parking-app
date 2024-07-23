@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parking Meta</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="header">
+    <div class="logo">Parking Meta</div>
+    <button class="button" id="scan">scan</button>
+    <button class="button" onclick="scannerButtonChange(true)" id="closeScanner" style="display: none">cancel</button>
+</div>
+
+<div class="button-container" id="buttonContainer">
+    <button class="button" onclick="startTransaction(1)">1hr</button>
+    <button class="button" onclick="startTransaction(2)">2hrs</button>
+    <button class="button" onclick="startTransaction(3)">3hrs</button>
+    <button class="button" onclick="showCustomInput()">Custom</button>
+    <div id="customInput" style="display: none;">
+        <input type="number" id="customHours" placeholder="Enter hours">
+        <button class="button" onclick="startCustomTransaction()">Create</button>
+    </div>
+</div>
+
+<div id="reader" class="none" style="width: 400px;"></div>
+<div id="modal" class="popup">
+    <button onclick="closePopup()" id="close-btn">x</button>
+    <h3 id="created">Start: 2024-07-22 14:37:00</h3>
+    <h3 id="expires">End: 2024-07-22 14:37:00</h3>
+    <h3 id="difHours">2 hours passed</h3>
+</div>
+
+<script>
+    const { ipcRenderer } = require('electron');
+    const { Html5Qrcode } = require("html5-qrcode");
+
+
+    function closePopup() {
+        document.getElementById('modal').style.display='none'
+    }
+
+
+
+    document.getElementById("scan").addEventListener('click', () => {
+
+        scannerButtonChange(false)
+
+        ipcRenderer.on('get-transaction-reply', (event, response) => {
+
+            if (response.success) {
+                document.getElementById('modal').style.display='flex'
+                console.log(response)
+                document.getElementById('modal').classList.add("show")
+                document.getElementById("created").textContent = `Start: ${response.transaction.created_at}`;
+                document.getElementById("expires").textContent = `End: ${response.transaction.expires_at}`;
+                document.getElementById("difHours").textContent = `${response.transaction.hoursDiff} hours passed`;
+            } else {
+                document.getElementById('modal').style.display='flex'
+                console.log(response)
+                document.getElementById('modal').classList.add("show")
+                document.getElementById("created").textContent = `Start: ${response.transaction.created_at}`;
+                document.getElementById("expires").textContent = `End: ${response.transaction.expires_at}`;
+                document.getElementById("difHours").textContent = `${response.transaction.hoursDiff} hours passed`;
+            }
+
+        });
+
+        const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+
+            ipcRenderer.send('get-transaction', { id:parseInt(decodedText) });
+
+            console.log(`Code scanned = ${decodedText}`, decodedResult);
+        };
+
+        const config = { fps: 10, qrbox: 250 };
+        const html5QrCode = new Html5Qrcode("reader");
+
+        html5QrCode.start(
+            { facingMode: "environment" }, // Change to { facingMode: "user" } for front camera
+            config,
+            qrCodeSuccessCallback
+        ).catch(err => {
+            console.error(`Unable to start scanning, error: ${err}`);
+        });
+    });
+
+    function scannerButtonChange(isOpen) {
+        if(isOpen){
+            document.getElementById("scan").style.display = "block";
+            document.getElementById("closeScanner").style.display = "none";
+            document.getElementById("buttonContainer").style.display = "flex"
+            document.getElementById("reader").classList.add("none")
+            // document.getElementById("transactionResult").classList.add("none")
+            return;
+        }
+        document.getElementById("scan").style.display = "none";
+        document.getElementById("closeScanner").style.display = "block";
+        document.getElementById("buttonContainer").style.display = "none"
+        document.getElementById("reader").classList.remove("none")
+        // document.getElementById("transactionResult").classList.add("block")
+
+    }
+
+    function startTransaction(duration) {
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + duration);
+
+        ipcRenderer.send('store-transaction', { duration, expiresAt });
+
+        closeCustomTransaction()
+    }
+
+    function showCustomInput() {
+        document.getElementById('customInput').style.display = 'flex';
+        document.querySelector('.button-container button:nth-last-child(2)').style.display = 'none';
+    }
+
+    function startCustomTransaction() {
+        const customHours = document.getElementById('customHours').value;
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + parseInt(customHours));
+
+        ipcRenderer.send('store-transaction', { duration: parseInt(customHours), expiresAt });
+
+        closeCustomTransaction()
+    }
+
+    function closeCustomTransaction() {
+        document.getElementById('customHours').value = '';
+        document.getElementById('customInput').style.display = 'none';
+        document.querySelector('.button-container button:nth-last-child(2)').style.display = 'block';
+    }
+</script>
+</body>
+</html>

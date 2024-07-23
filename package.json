@@ -1,0 +1,23 @@
+{
+  "name": "electron-parking",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "electron": "^31.2.1",
+    "html5-qrcode": "^2.3.8",
+    "moment-timezone": "^0.5.45",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "electron-reload": "^2.0.0-alpha.1",
+    "electron-reloader": "^1.2.3"
+  }
+}
