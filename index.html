@@ -10,8 +10,8 @@
 
 <div class="header">
     <div class="logo">Parking Meta</div>
-    <button class="button" id="scan">scan</button>
-    <button class="button" onclick="scannerButtonChange(true)" id="closeScanner" style="display: none">cancel</button>
+    <button class="button" id="scan">Scan</button>
+    <button class="button" onclick="scannerButtonChange(true)" id="closeScanner" style="display: none">Cancel</button>
 </div>
 
 <div class="button-container" id="buttonContainer">
@@ -26,60 +26,55 @@
 </div>
 
 <div id="reader" class="none" style="width: 400px;"></div>
-<div id="modal" class="popup">
+<div id="modal" class="popup" style="display: none;">
     <button onclick="closePopup()" id="close-btn">x</button>
-    <h3 id="created">Start: 2024-07-22 14:37:00</h3>
-    <h3 id="expires">End: 2024-07-22 14:37:00</h3>
-    <h3 id="difHours">2 hours passed</h3>
+    <div id="ticketContent"></div>
 </div>
 
 <script>
     const { ipcRenderer } = require('electron');
     const { Html5Qrcode } = require("html5-qrcode");
 
-
     function closePopup() {
-        document.getElementById('modal').style.display='none'
+        document.getElementById('modal').style.display='none';
     }
 
-
-
     document.getElementById("scan").addEventListener('click', () => {
-
-        scannerButtonChange(false)
+        scannerButtonChange(false);
 
         ipcRenderer.on('get-transaction-reply', (event, response) => {
-
             if (response.success) {
-                document.getElementById('modal').style.display='flex'
-                console.log(response)
-                document.getElementById('modal').classList.add("show")
-                document.getElementById("created").textContent = `Start: ${response.transaction.created_at}`;
-                document.getElementById("expires").textContent = `End: ${response.transaction.expires_at}`;
-                document.getElementById("difHours").textContent = `${response.transaction.hoursDiff} hours passed`;
+                document.getElementById('modal').style.display='flex';
+                document.getElementById('ticketContent').innerHTML = `
+                    <h1>Parking Meta</h1>
+                    <h3>Date: ${response.transaction.created_at}</h3>
+                    <div class="box"></div>
+                    <h3>Time Created: ${response.transaction.created_at.split(' ')[1]}</h3>
+                    <h3>Duration: ${response.transaction.duration} hour${response.transaction.duration > 1 ? 's' : ''}</h3>
+                    <h3>Expiring At: ${response.transaction.expires_at.split(' ')[1]}</h3>
+                `;
             } else {
-                document.getElementById('modal').style.display='flex'
-                console.log(response)
-                document.getElementById('modal').classList.add("show")
-                document.getElementById("created").textContent = `Start: ${response.transaction.created_at}`;
-                document.getElementById("expires").textContent = `End: ${response.transaction.expires_at}`;
-                document.getElementById("difHours").textContent = `${response.transaction.hoursDiff} hours passed`;
+                document.getElementById('modal').style.display='flex';
+                document.getElementById('ticketContent').innerHTML = `
+                    <h1>Parking Meta</h1>
+                    <h3>Date: ${response.transaction.created_at}</h3>
+                    <div class="box"></div>
+                    <h3>Time Created: ${response.transaction.created_at.split(' ')[1]}</h3>
+                    <h3>Duration: ${response.transaction.duration} hour${response.transaction.duration > 1 ? 's' : ''}</h3>
+                    <h3>Expiring At: ${response.transaction.expires_at.split(' ')[1]}</h3>
+                `;
             }
-
         });
 
         const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-
-            ipcRenderer.send('get-transaction', { id:parseInt(decodedText) });
-
-            console.log(`Code scanned = ${decodedText}`, decodedResult);
+            ipcRenderer.send('get-transaction', { id: parseInt(decodedText) });
         };
 
         const config = { fps: 10, qrbox: 250 };
         const html5QrCode = new Html5Qrcode("reader");
 
         html5QrCode.start(
-            { facingMode: "environment" }, // Change to { facingMode: "user" } for front camera
+            { facingMode: "environment" },
             config,
             qrCodeSuccessCallback
         ).catch(err => {
@@ -88,20 +83,17 @@
     });
 
     function scannerButtonChange(isOpen) {
-        if(isOpen){
+        if (isOpen) {
             document.getElementById("scan").style.display = "block";
             document.getElementById("closeScanner").style.display = "none";
-            document.getElementById("buttonContainer").style.display = "flex"
-            document.getElementById("reader").classList.add("none")
-            // document.getElementById("transactionResult").classList.add("none")
+            document.getElementById("buttonContainer").style.display = "flex";
+            document.getElementById("reader").classList.add("none");
             return;
         }
         document.getElementById("scan").style.display = "none";
         document.getElementById("closeScanner").style.display = "block";
-        document.getElementById("buttonContainer").style.display = "none"
-        document.getElementById("reader").classList.remove("none")
-        // document.getElementById("transactionResult").classList.add("block")
-
+        document.getElementById("buttonContainer").style.display = "none";
+        document.getElementById("reader").classList.remove("none");
     }
 
     function startTransaction(duration) {
@@ -110,7 +102,37 @@
 
         ipcRenderer.send('store-transaction', { duration, expiresAt });
 
-        closeCustomTransaction()
+        printTicket(duration, new Date(), expiresAt);
+    }
+
+    function printTicket(duration, createdAt, expiresAt) {
+        const formattedCreatedAt = formattedDateTime(createdAt);
+        const formattedExpiresAt = formattedDateTime(expiresAt);
+        const dateToday = formattedDate(createdAt);
+
+        const ticketContent = `
+            <h1>Parking Meta</h1>
+            <h3>Date: ${dateToday}</h3>
+            <div class="box"></div>
+            <h3>Time Created: ${formattedCreatedAt}</h3>
+            <h3>Duration: ${duration} hour${duration > 1 ? 's' : ''}</h3>
+            <h3>Expiring At: ${formattedExpiresAt}</h3>
+        `;
+
+        document.getElementById('modal').style.display = 'flex';
+        document.getElementById('ticketContent').innerHTML = ticketContent;
+    }
+
+    function formattedDateTime(date) {
+        return `${date.getHours()}:${padZero(date.getMinutes())}`;
+    }
+
+    function formattedDate(date) {
+        return `${padZero(date.getDate())}.${padZero(date.getMonth() + 1)}.${date.getFullYear()}`;
+    }
+
+    function padZero(num) {
+        return (num < 10 ? '0' : '') + num;
     }
 
     function showCustomInput() {
@@ -125,7 +147,9 @@
 
         ipcRenderer.send('store-transaction', { duration: parseInt(customHours), expiresAt });
 
-        closeCustomTransaction()
+        printTicket(parseInt(customHours), new Date(), expiresAt);
+
+        closeCustomTransaction();
     }
 
     function closeCustomTransaction() {
@@ -134,5 +158,6 @@
         document.querySelector('.button-container button:nth-last-child(2)').style.display = 'block';
     }
 </script>
+
 </body>
 </html>

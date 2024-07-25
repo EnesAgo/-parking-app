@@ -87,7 +87,7 @@ body {
     justify-content: center;
     align-items: center;
 
- }
+}
 #close-btn{
     position: absolute;
     right: 15px;
@@ -98,4 +98,13 @@ body {
     font-weight: lighter;
     font-size: 20px;
 
+}
+@media print {
+    #buttonContainer {
+        display: none;
+    }
+
+    .header {
+        display: none;
+    }
 }
