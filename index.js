@@ -2,7 +2,6 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const moment = require('moment-timezone');
-const QRCode = require("qrcode")
 
 const dbPath = path.join(app.getAppPath(), 'transactions.db');
 const db = new sqlite3.Database(dbPath);
@@ -41,8 +40,9 @@ function createWindow() {
                 console.error('Error inserting transaction:', err);
                 event.reply('store-transaction-reply', { success: false, error: err.message });
             } else {
+                const transactionId = this.lastID;
                 console.log('Transaction inserted successfully.');
-                event.reply('store-transaction-reply', { success: true });
+                event.reply('store-transaction-reply', { success: true, id: transactionId });
                 printTicket(duration, formattedCreatedAt, expiresAtFormatted);
             }
         });
