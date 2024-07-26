@@ -60,6 +60,7 @@
 
         ipcRenderer.on('get-transaction-reply', (event, response) => {
             if (response.success) {
+                console.log(response.hoursDiff)
                 document.getElementById('modal').style.display='flex';
                 document.getElementById('ticketContent').innerHTML = `
                     <h1>Parking Meta</h1>
@@ -68,6 +69,7 @@
                     <h3>Time Created: ${response.transaction.created_at.split(' ')[1]}</h3>
                     <h3>Duration: ${response.transaction.duration} hour${response.transaction.duration > 1 ? 's' : ''}</h3>
                     <h3>Expiring At: ${response.transaction.expires_at.split(' ')[1]}</h3>
+                    <h3 class="${response.hoursDiff == 0 && "none"}">Extra Charge: ${response.hoursDiff * 100} den</h3>
                 `;
             } else {
                 document.getElementById('modal').style.display='flex';

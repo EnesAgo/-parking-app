@@ -54,8 +54,9 @@ function createWindow() {
                 console.error('Error fetching transaction:', err);
                 event.reply('get-transaction-reply', { success: false, error: err.message });
             } else {
-                const hoursDiff = calculateHoursDifference(row.created_at, row.expires_at);
-                event.reply('get-transaction-reply', { success: true, transaction: row, hoursDiff });
+                const hoursDiff = calculateHoursDifference(row.expires_at, new Date());
+                console.log(hoursDiff)
+                event.reply('get-transaction-reply', { success: true, transaction: row, hoursDiff:hoursDiff });
             }
         });
     });
