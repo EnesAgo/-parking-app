@@ -73,9 +73,9 @@
         stopQrCodeScanner();
 
         ipcRenderer.on('get-transaction-reply', (event, response) => {
-            const { ticketExpired, hoursExpired, extraCharge } = response.transaction;
-
             if (response.success) {
+                const { ticketExpired, hoursExpired, extraCharge } = response.transaction;
+
                 const expiryStatus = ticketExpired ?
                     `Expired ${hoursExpired} hour${hoursExpired > 1 ? 's' : ''}` :
                     `Valid until ${response.transaction.expires_at.split(' ')[1]}`;
