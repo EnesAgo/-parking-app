@@ -34,53 +34,72 @@
 <script>
     const { ipcRenderer } = require('electron');
     const { Html5Qrcode } = require("html5-qrcode");
-    const QRCode = require("qrcode")
+    const QRCode = require("qrcode");
 
+    let html5QrCode;
 
     function generateQRCode(qrID) {
-        console.log("Generating QR code for ID:", qrID); // Debug log
+        console.log("Generating QR code for ID:", qrID);
         return new Promise((resolve, reject) => {
             QRCode.toString(qrID, { type: 'svg' }, (err, svg) => {
                 if (err) {
-                    console.error('Error generating QR code:', err); // Debug log
+                    console.error('Error generating QR code:', err);
                     reject(err);
                 } else {
-                    console.log("QR code generated successfully:", svg); // Debug log
+                    console.log("QR code generated successfully:", svg);
                     resolve(svg);
                 }
             });
         });
     }
+
     function closePopup() {
-        document.getElementById('modal').style.display='none';
+        document.getElementById('modal').style.display = 'none';
+    }
+
+    function stopQrCodeScanner() {
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                console.log("QR Code scanner stopped.");
+                html5QrCode = null;
+            }).catch((err) => {
+                console.error("Error stopping QR Code scanner:", err);
+            });
+        }
     }
 
     document.getElementById("scan").addEventListener('click', () => {
         scannerButtonChange(false);
+        stopQrCodeScanner();
 
         ipcRenderer.on('get-transaction-reply', (event, response) => {
+            const { ticketExpired, hoursExpired, extraCharge } = response.transaction;
+
             if (response.success) {
-                console.log(response.hoursDiff)
-                document.getElementById('modal').style.display='flex';
-                document.getElementById('ticketContent').innerHTML = `
-                    <h1>Parking Meta</h1>
-                    <h3>Date: ${response.transaction.created_at}</h3>
+                const expiryStatus = ticketExpired ?
+                    `Expired ${hoursExpired} hour${hoursExpired > 1 ? 's' : ''}` :
+                    `Valid until ${response.transaction.expires_at.split(' ')[1]}`;
+
+                document.getElementById('modal').style.display = 'flex';
+                document.getElementById('ticketContent').innerHTML =
+                    `<h1>Parking Meta</h1>
+                    <h3>Date: ${(() => {
+                        const date = new Date(response.transaction.created_at);
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const year = date.getFullYear();
+                        const hours = String(date.getHours()).padStart(2, '0');
+                        const minutes = String(date.getMinutes()).padStart(2, '0');
+                        const seconds = String(date.getSeconds()).padStart(2, '0');
+                        return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`;
+                    })()}</h3>
                     <div class="box"></div>
                     <h3>Time Created: ${response.transaction.created_at.split(' ')[1]}</h3>
                     <h3>Duration: ${response.transaction.duration} hour${response.transaction.duration > 1 ? 's' : ''}</h3>
-                    <h3>Expiring At: ${response.hoursDiff <= 0 ? response.transaction.expires_at.split(' ')[1] : "Expired" }</h3>
-                    <h3 class="${response.hoursDiff <= 0 && "none"}">Extra Charge: ${response.hoursDiff * 100} den (${response.hoursDiff} hours)</h3>
-                `;
+                    <h3>Expiring At: ${expiryStatus}</h3>
+                    <h3 class="${!ticketExpired ? 'none' : ''}">Extra Charge: ${extraCharge} den (${hoursExpired} hours)</h3>`;
             } else {
-                document.getElementById('modal').style.display='flex';
-                document.getElementById('ticketContent').innerHTML = `
-                    <h1>Parking Meta</h1>
-                    <h3>Date: ${response.transaction.created_at}</h3>
-                    <div class="box"></div>
-                    <h3>Time Created: ${response.transaction.created_at.split(' ')[1]}</h3>
-                    <h3>Duration: ${response.transaction.duration} hour${response.transaction.duration > 1 ? 's' : ''}</h3>
-                    <h3>Expiring At: ${response.transaction.expires_at.split(' ')[1]}</h3>
-                `;
+                console.error("Error fetching transaction:", response.error);
             }
         });
 
@@ -89,7 +108,7 @@
         };
 
         const config = { fps: 10, qrbox: 250 };
-        const html5QrCode = new Html5Qrcode("reader");
+        html5QrCode = new Html5Qrcode("reader");
 
         html5QrCode.start(
             { facingMode: "environment" },
@@ -106,6 +125,7 @@
             document.getElementById("closeScanner").style.display = "none";
             document.getElementById("buttonContainer").style.display = "flex";
             document.getElementById("reader").classList.add("none");
+            stopQrCodeScanner();
             return;
         }
         document.getElementById("scan").style.display = "none";
@@ -114,24 +134,17 @@
         document.getElementById("reader").classList.remove("none");
     }
 
-
-
-
     function startTransaction(duration) {
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + duration);
 
         ipcRenderer.send('store-transaction', { duration, expiresAt });
 
-        var qrID;
+        ipcRenderer.once('store-transaction-reply', (event, response) => {
+            printTicket(duration, new Date(), expiresAt, response.id.toString());
+        });
 
-        ipcRenderer.on('store-transaction-reply', (event, response) => {
-            qrID = response.id.toString()
-            console.log(qrID)
-            printTicket(duration, new Date(), expiresAt, qrID);
-        })
-
-
+        closeCustomTransaction();
     }
 
     async function printTicket(duration, createdAt, expiresAt, qrID) {
@@ -139,38 +152,32 @@
         const formattedExpiresAt = formattedDateTime(expiresAt);
         const dateToday = formattedDate(createdAt);
 
-        try{
-            console.log("Calling generateQRCode with ID:", qrID); // Debug log
+        try {
             const qrCodeSvg = await generateQRCode(qrID);
-            console.log("QR Code SVG received:", qrCodeSvg); // Debug log
 
-
-            const ticketContent = `
-            <h1>Parking Meta</h1>
-
-            <h3 style="text-align: center">${dateToday}</h3>
-            <div class="box">${qrCodeSvg}</div>
-            <h3>Time Created: ${formattedCreatedAt}</h3>
-            <h3>Duration: ${duration} hour${duration > 1 ? 's' : ''}</h3>
-            <h3>Expiring At: ${formattedExpiresAt}</h3>
-        `;
+            const ticketContent =
+                `<h1>Parking Meta</h1>
+                <h3 style="text-align: center">${dateToday}</h3>
+                <div class="box">${qrCodeSvg}</div>
+                <h3>Time Created: ${formattedCreatedAt}</h3>
+                <h3>Duration: ${duration} hour${duration > 1 ? 's' : ''}</h3>
+                <h3>Expiring At: ${formattedExpiresAt}</h3>`;
 
             document.getElementById('modal').style.display = 'flex';
             document.getElementById('ticketContent').innerHTML = ticketContent;
 
-            document.getElementById('modal').style.height='450px';
-            document.getElementById('close-btn').style.display='none';
-            document.getElementById('close-btn').style.width='300';
+            document.getElementById('modal').style.height = '450px';
+            document.getElementById('close-btn').style.display = 'none';
+            document.getElementById('close-btn').style.width = '300px';
 
             setTimeout(() => {
                 closePopup();
-                document.getElementById('modal').style.height='300px';
-                document.getElementById('close-btn').style.display='block';
-            }, 3000)
+                document.getElementById('modal').style.height = '300px';
+                document.getElementById('close-btn').style.display = 'block';
+            }, 1000);
         } catch (e) {
-            console.error('Error generating QR code:', err);
+            console.error('Error generating QR code:', e);
         }
-
     }
 
     function formattedDateTime(date) {
@@ -188,6 +195,12 @@
     function showCustomInput() {
         document.getElementById('customInput').style.display = 'flex';
         document.querySelector('.button-container button:nth-last-child(2)').style.display = 'none';
+
+        document.querySelectorAll('.button-container button').forEach(button => {
+            if (button.textContent !== 'Custom') {
+                button.addEventListener('click', closeCustomTransaction);
+            }
+        });
     }
 
     function startCustomTransaction() {
@@ -195,19 +208,19 @@
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + parseInt(customHours));
 
-        ipcRenderer.send('store-transaction', { duration: parseInt(customHours), expiresAt });
+        ipcRenderer.send('store-transaction', { duration: customHours, expiresAt });
 
-        printTicket(parseInt(customHours), new Date(), expiresAt);
+        ipcRenderer.once('store-transaction-reply', (event, response) => {
+            printTicket(customHours, new Date(), expiresAt, response.id.toString());
+        });
 
         closeCustomTransaction();
     }
 
     function closeCustomTransaction() {
-        document.getElementById('customHours').value = '';
         document.getElementById('customInput').style.display = 'none';
         document.querySelector('.button-container button:nth-last-child(2)').style.display = 'block';
     }
 </script>
-
 </body>
 </html>

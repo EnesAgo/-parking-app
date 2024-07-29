@@ -7,14 +7,14 @@ const dbPath = path.join(app.getAppPath(), 'transactions.db');
 const db = new sqlite3.Database(dbPath);
 
 db.serialize(() => {
-    db.run(`
-        CREATE TABLE IF NOT EXISTS transactions (
+    db.run(
+        `CREATE TABLE IF NOT EXISTS transactions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             duration INTEGER,
             created_at TEXT,
             expires_at TEXT
-        )
-    `);
+        )`
+    );
 });
 
 function createWindow() {
@@ -54,15 +54,20 @@ function createWindow() {
                 console.error('Error fetching transaction:', err);
                 event.reply('get-transaction-reply', { success: false, error: err.message });
             } else {
-                const hoursDiff = calculateHoursDifference(row.expires_at, new Date());
-                event.reply('get-transaction-reply', { success: true, transaction: {...row, date:moment(row.created_at).format('DD-MM-YYYY HH:mm:ss')}, hoursDiff:hoursDiff });
+                const { ticketExpired, hoursExpired, extraCharge } = isTicketExpired(row.expires_at);
+                const ticketData = {
+                    ...row,
+                    date: moment(row.created_at).format('DD-MM-YYYY HH:mm:ss'),
+                    ticketExpired,
+                    hoursExpired,
+                    extraCharge
+                };
+                event.reply('get-transaction-reply', { success: true, transaction: ticketData });
             }
         });
     });
 
     ipcMain.on('print-ticket', (event, ticketContent) => {
-        // win.webContents.send('print-ticket-renderer', ticketContent);
-
         setTimeout(() => {
             win.webContents.send('print-ticket-renderer', ticketContent);
             win.webContents.print({ silent: true, printBackground: true }, (success, errorType) => {
@@ -70,7 +75,7 @@ function createWindow() {
                     console.error(`Printing failed. Error: ${errorType}`);
                 }
             });
-        }, 3000);
+        }, 2000);
     });
 
     win.on('closed', () => {
@@ -78,42 +83,45 @@ function createWindow() {
     });
 }
 
+function isTicketExpired(expirationTime) {
+    const now = moment();
+    const expiresAt = moment(expirationTime);
+    const hoursExpired = expiresAt.isBefore(now) ? now.diff(expiresAt, 'hours') : 0;
+    const ticketExpired = hoursExpired > 0;
+    const extraCharge = ticketExpired ? hoursExpired * 100 : 0;
+    return { ticketExpired, hoursExpired, extraCharge };
+}
+
 function printTicket(duration, createdAt, expiresAt) {
     const formattedCreatedAt = moment(createdAt).format('HH:mm');
     const formattedExpiresAt = moment(expiresAt).format('HH:mm');
     const dateToday = moment().format('DD.MM.YYYY');
 
-        const ticketContentOnly = `
-            <html>
-            <head>
-                <title>Parking Ticket</title>
-                <style>
-                    body { font-family: Arial, sans-serif; }
-                    .ticket { text-align: center; }
-                    h1, h3 { margin: 5px; }
-                    .box { display: block; margin: 10px auto; width: 150px; height: 150px; border: 2px solid black; }
-                </style>
-            </head>
-            <body>
-                <div class="ticket">
-                    <h1>Parking Meta</h1>
-                    <h3>${dateToday}</h3>
-                    <div class="box">
-                        <h3>helloo</h3>
-<!--                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h29v29H0z"/><path stroke="#000000" d="M4 4.5h7m2 0h1m1 0h1m2 0h7M4 5.5h1m5 0h1m1 0h3m1 0h1m1 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m2 0h3m2 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m2 0h1m1 0h2m1 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h5m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m2 0h3m2 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h7M14 11.5h1M4 12.5h1m1 0h1m1 0h1m1 0h1m2 0h1m2 0h1m3 0h1m2 0h1M4 13.5h1m1 0h4m4 0h2m1 0h1m1 0h1m1 0h1m1 0h1M7 14.5h1m2 0h2m3 0h1m1 0h3m2 0h1m1 0h1M4 15.5h3m4 0h1m1 0h5m1 0h3m1 0h2M4 16.5h1m1 0h1m2 0h3m3 0h1m1 0h3m2 0h3M12 17.5h1m5 0h1m3 0h1M4 18.5h7m5 0h1m3 0h1M4 19.5h1m5 0h1m7 0h1m3 0h2M4 20.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1M4 21.5h1m1 0h3m1 0h1m2 0h3m1 0h1m1 0h1m1 0h1m1 0h1M4 22.5h1m1 0h3m1 0h1m1 0h2m1 0h1m1 0h3m1 0h2m1 0h1M4 23.5h1m5 0h1m3 0h4m1 0h3M4 24.5h7m1 0h1m1 0h2m1 0h3m1 0h2m1 0h1"/></svg>-->
-                    </div>
-                   
-                    
-                    <h3>Time Created: ${formattedCreatedAt}</h3>
-                    <h3>Duration: ${duration} hour${duration > 1 ? 's' : ''}</h3>
-                    <h3>Expiring At: ${formattedExpiresAt}</h3>
+    const ticketContentOnly = `
+        <html>
+        <head>
+            <title>Parking Ticket</title>
+            <style>
+                body { font-family: Arial, sans-serif; }
+                .ticket { text-align: center; }
+                h1, h3 { margin: 5px; }
+                .box { display: block; margin: 10px auto; width: 150px; height: 150px; border: 2px solid black; }
+            </style>
+        </head>
+        <body>
+            <div class="ticket">
+                <h1>Parking Meta</h1>
+                <h3>${dateToday}</h3>
+                <div class="box"></div>
+                <h3>Time Created: ${formattedCreatedAt}</h3>
+                <h3>Duration: ${duration} hour${duration > 1 ? 's' : ''}</h3>
+                <h3>Expiring At: ${formattedExpiresAt}</h3>
+            </div>
+        </body>
+        </html>
+    `;
 
-                </div>
-            </body>
-            </html>
-        `;
-
-        ipcMain.emit('print-ticket', ticketContentOnly);
+    ipcMain.emit('print-ticket', ticketContentOnly);
 }
 
 app.whenReady().then(() => {
@@ -131,9 +139,3 @@ app.on('activate', () => {
         createWindow();
     }
 });
-
-function calculateHoursDifference(start, end) {
-    const startTime = moment(start);
-    const endTime = moment(end);
-    return endTime.diff(startTime, 'hours');
-}
