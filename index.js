@@ -43,6 +43,7 @@ function createWindow() {
                 const transactionId = this.lastID;
                 console.log('Transaction inserted successfully.');
                 event.reply('store-transaction-reply', { success: true, id: transactionId });
+                printTicket(duration, formattedCreatedAt, expiresAtFormatted);
             }
         });
     });
@@ -53,6 +54,7 @@ function createWindow() {
                 console.error('Error fetching transaction:', err);
                 event.reply('get-transaction-reply', { success: false, error: err?.message || "not found" });
             } else {
+                console.log(row)
                 const { ticketExpired, hoursExpired, extraCharge } = isTicketExpired(row.expires_at);
                 const ticketData = {
                     ...row,
@@ -67,14 +69,12 @@ function createWindow() {
     });
 
     ipcMain.on('print-ticket', (event, ticketContent) => {
-        setTimeout(() => {
-            win.webContents.send('print-ticket-renderer', ticketContent);
-            win.webContents.print({ silent: true, printBackground: true }, (success, errorType) => {
-                if (!success) {
-                    console.error(`Printing failed. Error: ${errorType}`);
-                }
-            });
-        }, 2000);
+        win.webContents.send('print-ticket-renderer', ticketContent);
+        win.webContents.print({ silent: false, printBackground: true }, (success, errorType) => {
+            if (!success) {
+                console.error(`Printing failed. Error: ${errorType}`);
+            }
+        });
     });
 
     win.on('closed', () => {
@@ -90,6 +90,39 @@ function isTicketExpired(expirationTime) {
     const extraCharge = ticketExpired ? hoursExpired * 100 : 0;
     return { ticketExpired, hoursExpired, extraCharge };
 }
+
+function printTicket(duration, createdAt, expiresAt) {
+    const formattedCreatedAt = moment(createdAt).format('HH:mm');
+    const formattedExpiresAt = moment(expiresAt).format('HH:mm');
+    const dateToday = moment().format('DD.MM.YYYY');
+
+    const ticketContentOnly = `
+        <html>
+        <head>
+            <title>Parking Ticket</title>
+            <style>
+                body { font-family: Arial, sans-serif; }
+                .ticket { text-align: center; }
+                h1, h3 { margin: 5px; }
+                .box { display: block; margin: 10px auto; width: 150px; height: 150px; border: 2px solid black; }
+            </style>
+        </head>
+        <body>
+            <div class="ticket">
+                <h1>Parking Meta</h1>
+                <h3>${dateToday}</h3>
+                <div class="box"></div>
+                <h3>Time Created: ${formattedCreatedAt}</h3>
+                <h3>Duration: ${duration} hour${duration > 1 ? 's' : ''}</h3>
+                <h3>Expiring At: ${formattedExpiresAt}</h3>
+            </div>
+        </body>
+        </html>
+    `;
+
+    ipcMain.emit('print-ticket', ticketContentOnly);
+}
+
 app.whenReady().then(() => {
     createWindow();
 });

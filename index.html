@@ -11,7 +11,7 @@
 <div class="header">
     <div class="logo">Parking Meta</div>
     <button class="button" id="scan">Scan</button>
-    <button class="button" onclick="scannerButtonChange(true)" id="closeScanner" style="display: none">Cancel</button>
+    <button class="button" onclick="scannerButtonChange(true);closePopup()" id="closeScanner" style="display: none">Cancel</button>
 </div>
 
 <div class="button-container" id="buttonContainer">
@@ -73,12 +73,13 @@
         stopQrCodeScanner();
 
         ipcRenderer.on('get-transaction-reply', (event, response) => {
+
             if (response.success) {
                 const { ticketExpired, hoursExpired, extraCharge } = response.transaction;
 
                 const expiryStatus = ticketExpired ?
                     `Expired ${hoursExpired} hour${hoursExpired > 1 ? 's' : ''}` :
-                    `Valid until ${response.transaction.expires_at.split(' ')[1]}`;
+                    `${response.transaction.expires_at.split(' ')[1]}`;
 
                 document.getElementById('modal').style.display = 'flex';
                 document.getElementById('ticketContent').innerHTML =
@@ -156,25 +157,31 @@
             const qrCodeSvg = await generateQRCode(qrID);
 
             const ticketContent =
-                `<h1>Parking Meta</h1>
-                <h3 style="text-align: center">${dateToday}</h3>
-                <div class="box">${qrCodeSvg}</div>
-                <h3>Time Created: ${formattedCreatedAt}</h3>
-                <h3>Duration: ${duration} hour${duration > 1 ? 's' : ''}</h3>
-                <h3>Expiring At: ${formattedExpiresAt}</h3>`;
+                `<p style="font-size:40px;font-weight:900;text-align:center;margin:0;">Parking Meta</p>
+                <p style="text-align: center;margin:0;font-size:30px">${dateToday}</p>
+                <div class="box" style="width:100%;margin:0; display:flex; justify-content:center; width:200px">${qrCodeSvg}</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px";><h3 style="font-size:20px">Entrance:</h3><p style="font-size:25px">${formattedCreatedAt}</p></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px";><h3 style="font-size:20px">Duration:</h3><p style="font-size:25px">${duration} hour${duration > 1 ? 's' : ''}</p></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px;"><h3 style="font-size:20px">Expiring At:</h3><p style="font-weight:700; font-size:25px;">${formattedCreatedAt}</p></div>
+                `;
 
             document.getElementById('modal').style.display = 'flex';
             document.getElementById('ticketContent').innerHTML = ticketContent;
+            document.getElementById('ticketContent').style.width="70%"
+            document.getElementById('ticketContent').style.display="flex"
+            document.getElementById('ticketContent').style.flexDirection="column"
+            document.getElementById('ticketContent').style.alignItems="center"
 
-            document.getElementById('modal').style.height = '450px';
+            document.getElementById('modal').style.height = '380px';
             document.getElementById('close-btn').style.display = 'none';
-            document.getElementById('close-btn').style.width = '300px';
+            document.getElementById('close-btn').style.width = '350x';
 
             setTimeout(() => {
                 closePopup();
+                document.getElementById('ticketContent').style.width="auto"
                 document.getElementById('modal').style.height = '300px';
                 document.getElementById('close-btn').style.display = 'block';
-            }, 1000);
+            }, 3000);
         } catch (e) {
             console.error('Error generating QR code:', e);
         }
