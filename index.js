@@ -21,6 +21,7 @@ db.serialize(() => {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             first_name TEXT,
             last_name TEXT,
+            full_name TEXT,
             phone_number TEXT
         )
     `);
@@ -92,7 +93,10 @@ function createWindow() {
     ipcMain.on('add-client', (event, data) => {
         const { firstName, lastName, phoneNumber } = data;
 
-        db.run('INSERT INTO clients (first_name, last_name, phone_number) VALUES (?, ?, ?)', [firstName, lastName, phoneNumber], function(err) {
+        const fullName = `${firstName} ${lastName}`
+        console.log(fullName)
+
+        db.run('INSERT INTO clients (first_name, last_name, full_name, phone_number) VALUES (?, ?, ?, ?)', [firstName, lastName, fullName, phoneNumber], function(err) {
             if (err) {
                 console.error('Error inserting client:', err);
             } else {
@@ -100,6 +104,21 @@ function createWindow() {
             }
         });
     });
+
+
+    ipcMain.on('get-client', (event, data) => {
+        db.all('SELECT * FROM clients WHERE full_name LIKE ?', [`%${data.fullName}%`], (err, row) => {
+            if (err || row == undefined) {
+                console.error('Error fetching transaction:', err);
+                event.reply('get-client-reply', { success: false, error: err?.message || "not found" });
+            } else {
+                console.log(row)
+                event.reply('get-client-reply', { success: true, data: row });
+            }
+        });
+    });
+
+
 
     win.on('closed', () => {
         db.close();

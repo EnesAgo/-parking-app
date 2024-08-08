@@ -9,10 +9,16 @@
 <body>
 
 <div class="header">
+    <div style="display: flex;flex-direction: column">
+        <button class="button" id="scan">Scan</button>
+        <button class="button" id="reservation">Reservations</button>
+    </div>
     <div class="logo">Parking Meta</div>
-    <button class="button" id="scan">Scan</button>
     <button class="button" onclick="scannerButtonChange(true); closePopup()" id="closeScanner" style="display: none">Cancel</button>
-    <button class="button" id="clients">Clients</button>
+    <div style="display: flex;flex-direction: column">
+        <button class="button" id="clients">Clients</button>
+        <button class="button" id="createReservation">+ Reservation</button>
+    </div>
 </div>
 
 <div class="button-container" id="buttonContainer">
@@ -48,12 +54,62 @@
     </div>
 </div>
 
+<div id="createReservationModal" class="modal" style="display: none;">
+
+    <div class="modal-content">
+
+        <button class="modal-close" onclick="closeCreateReservationModal()">x</button>
+
+        <input id="clientListSearch" list="clientsList" type="search" placeholder="Search ..." />
+        <datalist id="clientsList">
+            <option value="One">
+            <option value="Two">
+            <option value="Three">
+        </datalist>
+
+
+
+    </div>
+</div>
+
 <script>
+
+    //imports & init values
     const { ipcRenderer } = require('electron');
     const { Html5Qrcode } = require("html5-qrcode");
     const QRCode = require("qrcode");
 
     let html5QrCode;
+
+    const clientListSearchInput = document.getElementById("clientListSearch")
+
+    //Create Reservation
+
+    clientListSearchInput.addEventListener("input", (e) => {
+        const val = clientListSearchInput.value
+        console.log(val)
+        ipcRenderer.send('get-client', { fullName: val });
+    })
+
+    ipcRenderer.on('get-client-reply', (event, response) => {
+        if (response.success) {
+            console.log(response.data)
+            let searched = ""
+            response.data.forEach(e => searched+=`
+            <option value="${e.full_name}"
+            `)
+
+            console.log(searched)
+
+            document.getElementById("clientsList").innerHTML = searched
+
+        }
+    })
+
+    // ipcRenderer.send('store-transaction', { duration, expiresAt });
+
+
+
 
     function generateQRCode(qrID) {
         console.log("Generating QR code for ID:", qrID);
@@ -135,6 +191,7 @@
             console.error(`Unable to start scanning, error: ${err}`);
         });
     });
+
 
     function scannerButtonChange(isOpen) {
         if (isOpen) {
@@ -254,6 +311,13 @@
 
     function closeClientModal() {
         document.getElementById('clientModal').style.display = 'none';
+    }
+
+    document.getElementById("createReservation").addEventListener('click', () => {
+        document.getElementById('createReservationModal').style.display = 'flex';
+    });
+    function closeCreateReservationModal() {
+        document.getElementById('createReservationModal').style.display = 'none';
     }
 
     function addClient() {

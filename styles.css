@@ -28,6 +28,8 @@ body {
     font-size: 24px;
     color: #007bff;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    line-height: 52px;
 }
 
 .button-container {
