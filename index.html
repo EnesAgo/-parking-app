@@ -11,10 +11,12 @@
 <div class="header">
     <div class="logo">Parking Meta</div>
     <button class="button" id="scan">Scan</button>
-    <button class="button" onclick="scannerButtonChange(true);closePopup()" id="closeScanner" style="display: none">Cancel</button>
+    <button class="button" onclick="scannerButtonChange(true); closePopup()" id="closeScanner" style="display: none">Cancel</button>
+    <button class="button" id="clients">Clients</button>
 </div>
 
 <div class="button-container" id="buttonContainer">
+    <button class="button" onclick="startTransaction(0)">0</button>
     <button class="button" onclick="startTransaction(1)">1hr</button>
     <button class="button" onclick="startTransaction(2)">2hrs</button>
     <button class="button" onclick="startTransaction(3)">3hrs</button>
@@ -26,9 +28,24 @@
 </div>
 
 <div id="reader" class="none" style="width: 400px;"></div>
+
 <div id="modal" class="popup" style="display: none;">
     <button onclick="closePopup()" id="close-btn">x</button>
     <div id="ticketContent"></div>
+</div>
+
+<div id="clientModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeClientModal()">x</button>
+        <h2>Add Client</h2>
+        <label for="firstName">First Name:</label>
+        <input type="text" id="firstName" class="modal-input"><br>
+        <label for="lastName">Last Name:</label>
+        <input type="text" id="lastName" class="modal-input"><br>
+        <label for="phoneNumber">Phone Number:</label>
+        <input type="text" id="phoneNumber" class="modal-input"><br>
+        <button class="buttonClient" onclick="addClient()">Add Client</button>
+    </div>
 </div>
 
 <script>
@@ -73,13 +90,12 @@
         stopQrCodeScanner();
 
         ipcRenderer.on('get-transaction-reply', (event, response) => {
-
             if (response.success) {
                 const { ticketExpired, hoursExpired, extraCharge } = response.transaction;
 
                 const expiryStatus = ticketExpired ?
                     `Expired ${hoursExpired} hour${hoursExpired > 1 ? 's' : ''}` :
-                    `${response.transaction.expires_at.split(' ')[1]}`;
+                    response.transaction.expires_at.split(' ')[1];
 
                 document.getElementById('modal').style.display = 'flex';
                 document.getElementById('ticketContent').innerHTML =
@@ -137,7 +153,9 @@
 
     function startTransaction(duration) {
         const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + duration);
+        if (duration > 0) {
+            expiresAt.setHours(expiresAt.getHours() + duration);
+        }
 
         ipcRenderer.send('store-transaction', { duration, expiresAt });
 
@@ -150,20 +168,32 @@
 
     async function printTicket(duration, createdAt, expiresAt, qrID) {
         const formattedCreatedAt = formattedDateTime(createdAt);
-        const formattedExpiresAt = formattedDateTime(expiresAt);
+        const formattedExpiresAt = formattedTime(expiresAt);
         const dateToday = formattedDate(createdAt);
+        function formattedTime(date) {
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
 
         try {
             const qrCodeSvg = await generateQRCode(qrID);
 
-            const ticketContent =
-                `<p style="font-size:40px;font-weight:900;text-align:center;margin:0;">Parking Meta</p>
+            let ticketContent = `
+                <p style="font-size:40px;font-weight:900;text-align:center;margin:0;">Parking Meta</p>
                 <p style="text-align: center;margin:0;font-size:30px">${dateToday}</p>
                 <div class="box" style="width:100%;margin:0; display:flex; justify-content:center; width:200px">${qrCodeSvg}</div>
                 <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px";><h3 style="font-size:20px">Entrance:</h3><p style="font-size:25px">${formattedCreatedAt}</p></div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px";><h3 style="font-size:20px">Duration:</h3><p style="font-size:25px">${duration} hour${duration > 1 ? 's' : ''}</p></div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px;"><h3 style="font-size:20px">Expiring At:</h3><p style="font-weight:700; font-size:25px;">${formattedCreatedAt}</p></div>
+            `;
+
+            if (duration > 0) {
+                ticketContent += `
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px";><h3 style="font-size:20px">Duration:</h3><p style="font-size:25px">${duration} hour${duration > 1 ? 's' : ''}</p></div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px;"><h3 style="font-size:20px">Expiring At:</h3><p style="font-weight:700; font-size:25px;">${formattedExpiresAt}</p></div>
                 `;
+            }
+
+            ticketContent += `</div>`;
 
             document.getElementById('modal').style.display = 'flex';
             document.getElementById('ticketContent').innerHTML = ticketContent;
@@ -187,47 +217,66 @@
         }
     }
 
-    function formattedDateTime(date) {
-        return `${date.getHours()}:${padZero(date.getMinutes())}`;
-    }
-
     function formattedDate(date) {
-        return `${padZero(date.getDate())}.${padZero(date.getMonth() + 1)}.${date.getFullYear()}`;
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}.${month}.${year}`;
     }
 
-    function padZero(num) {
-        return (num < 10 ? '0' : '') + num;
+    function formattedDateTime(date) {
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${hours}:${minutes}`;
     }
 
     function showCustomInput() {
-        document.getElementById('customInput').style.display = 'flex';
-        document.querySelector('.button-container button:nth-last-child(2)').style.display = 'none';
-
-        document.querySelectorAll('.button-container button').forEach(button => {
-            if (button.textContent !== 'Custom') {
-                button.addEventListener('click', closeCustomTransaction);
-            }
-        });
-    }
-
-    function startCustomTransaction() {
-        const customHours = document.getElementById('customHours').value;
-        const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + parseInt(customHours));
-
-        ipcRenderer.send('store-transaction', { duration: customHours, expiresAt });
-
-        ipcRenderer.once('store-transaction-reply', (event, response) => {
-            printTicket(customHours, new Date(), expiresAt, response.id.toString());
-        });
-
-        closeCustomTransaction();
+        document.getElementById('customInput').style.display = 'block';
     }
 
     function closeCustomTransaction() {
         document.getElementById('customInput').style.display = 'none';
-        document.querySelector('.button-container button:nth-last-child(2)').style.display = 'block';
+        document.getElementById('customHours').value = '';
     }
+
+    function startCustomTransaction() {
+        const hours = parseInt(document.getElementById('customHours').value);
+        if (isNaN(hours) || hours <= 0) {
+            alert('Please enter a valid number of hours.');
+            return;
+        }
+        startTransaction(hours);
+    }
+
+    document.getElementById("clients").addEventListener('click', () => {
+        document.getElementById('clientModal').style.display = 'flex';
+    });
+
+    function closeClientModal() {
+        document.getElementById('clientModal').style.display = 'none';
+    }
+
+    function addClient() {
+        const firstName = document.getElementById('firstName').value;
+        const lastName = document.getElementById('lastName').value;
+        const phoneNumber = document.getElementById('phoneNumber').value;
+
+        if (!firstName || !lastName || !phoneNumber) {
+            alert('Please fill in all fields.');
+            return;
+        }
+
+        ipcRenderer.send('add-client', { firstName, lastName, phoneNumber });
+        closeClientModal();
+    }
+
+    document.getElementById("clients").addEventListener('click', () => {
+        document.getElementById('firstName').value = '';
+        document.getElementById('lastName').value = '';
+        document.getElementById('phoneNumber').value = '';
+        document.getElementById('clientModal').style.display = 'flex';
+    });
 </script>
+
 </body>
 </html>

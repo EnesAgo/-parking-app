@@ -7,14 +7,23 @@ const dbPath = path.join(app.getAppPath(), 'transactions.db');
 const db = new sqlite3.Database(dbPath);
 
 db.serialize(() => {
-    db.run(
-        `CREATE TABLE IF NOT EXISTS transactions (
+    db.run(`
+        CREATE TABLE IF NOT EXISTS transactions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             duration INTEGER,
             created_at TEXT,
             expires_at TEXT
-        )`
-    );
+        )
+    `);
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS clients (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            first_name TEXT,
+            last_name TEXT,
+            phone_number TEXT
+        )
+    `);
 });
 
 function createWindow() {
@@ -33,7 +42,7 @@ function createWindow() {
     ipcMain.on('store-transaction', (event, data) => {
         const { duration, expiresAt } = data;
         const formattedCreatedAt = moment().tz('Europe/Skopje').format('YYYY-MM-DD HH:mm:ss');
-        const expiresAtFormatted = moment(expiresAt).tz('Europe/Skopje').format('YYYY-MM-DD HH:mm:ss');
+        const expiresAtFormatted = duration > 0 ? moment(expiresAt).tz('Europe/Skopje').format('YYYY-MM-DD HH:mm:ss') : null;
 
         db.run('INSERT INTO transactions (duration, created_at, expires_at) VALUES (?, ?, ?)', [duration, formattedCreatedAt, expiresAtFormatted], function(err) {
             if (err) {
@@ -43,7 +52,11 @@ function createWindow() {
                 const transactionId = this.lastID;
                 console.log('Transaction inserted successfully.');
                 event.reply('store-transaction-reply', { success: true, id: transactionId });
-                printTicket(duration, formattedCreatedAt, expiresAtFormatted);
+                if (duration > 0) {
+                    printTicket(duration, formattedCreatedAt, expiresAtFormatted);
+                } else {
+                    printTicket(duration, formattedCreatedAt, null);
+                }
             }
         });
     });
@@ -54,7 +67,6 @@ function createWindow() {
                 console.error('Error fetching transaction:', err);
                 event.reply('get-transaction-reply', { success: false, error: err?.message || "not found" });
             } else {
-                console.log(row)
                 const { ticketExpired, hoursExpired, extraCharge } = isTicketExpired(row.expires_at);
                 const ticketData = {
                     ...row,
@@ -77,6 +89,18 @@ function createWindow() {
         });
     });
 
+    ipcMain.on('add-client', (event, data) => {
+        const { firstName, lastName, phoneNumber } = data;
+
+        db.run('INSERT INTO clients (first_name, last_name, phone_number) VALUES (?, ?, ?)', [firstName, lastName, phoneNumber], function(err) {
+            if (err) {
+                console.error('Error inserting client:', err);
+            } else {
+                console.log('Client inserted successfully.');
+            }
+        });
+    });
+
     win.on('closed', () => {
         db.close();
     });
@@ -93,10 +117,10 @@ function isTicketExpired(expirationTime) {
 
 function printTicket(duration, createdAt, expiresAt) {
     const formattedCreatedAt = moment(createdAt).format('HH:mm');
-    const formattedExpiresAt = moment(expiresAt).format('HH:mm');
+    const formattedExpiresAt = expiresAt ? moment(expiresAt).format('HH:mm') : '';
     const dateToday = moment().format('DD.MM.YYYY');
 
-    const ticketContentOnly = `
+    let ticketContentOnly = `
         <html>
         <head>
             <title>Parking Ticket</title>
@@ -113,8 +137,16 @@ function printTicket(duration, createdAt, expiresAt) {
                 <h3>${dateToday}</h3>
                 <div class="box"></div>
                 <h3>Time Created: ${formattedCreatedAt}</h3>
-                <h3>Duration: ${duration} hour${duration > 1 ? 's' : ''}</h3>
-                <h3>Expiring At: ${formattedExpiresAt}</h3>
+    `;
+
+    if (duration > 0) {
+        ticketContentOnly += `
+            <h3>Duration: ${duration} hour${duration > 1 ? 's' : ''}</h3>
+            <h3>Expiring At: ${formattedExpiresAt}</h3>
+        `;
+    }
+
+    ticketContentOnly += `
             </div>
         </body>
         </html>
