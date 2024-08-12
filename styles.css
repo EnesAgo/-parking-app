@@ -187,12 +187,13 @@ body {
 .new-modal-close:hover {
     color: #ff0000;
 }
-.new-modal-input {
+#clientSelect,.new-modal-input {
     width: calc(100% - 20px);
     padding: 8px;
     margin-bottom: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
+    cursor: pointer;
 }
 .modal-button {
     padding: 12px 24px;

@@ -142,54 +142,48 @@ function createWindow() {
                 <head>
                     <title>Parking Ticket</title>
                     <style>
+                        html,body {
+                            width: 100%;
+                            height: 100%
+                        }
                         body {
                             font-family: Poppins;
                             font-size: 16px;
                             margin: 0;
                             padding: 0;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
                         }
                         .ticket {
                             text-align: center;
                             width: 100%;
+                            height: 100%;
                             padding: 20px;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            gap: 20px;
                         }
-                        .ticket h1 {
-                            font-size: 24px;
-                            font-weight: bold;
-                            margin: 10px 0;
-                        }
-                        .ticket h3 {
-                            font-size: 18px;
-                            margin: 10px 0;
-                        }
-                        .ticket .date {
-                            font-size: 20px;
-                            font-weight: bold;
-                            margin: 20px 0;
-                        }
-                        .ticket .qr-code {
-                            margin: 20px auto;
-                            width: 150px;
-                            height: 150px;
-                        }
+
                     </style>
                 </head>
                 <body>
-                    <div class="ticket">
-                        <h1>Parking Meta</h1>
-                        <div class="date">${dateToday}</div>
-                        <div class="qr-code">${qrCodeSvg}</div>
-                        <h3>Client: ${row.first_name} ${row.last_name}</h3>
-                        <h3>Entrance: ${formattedFromDate}</h3>
-                        <h3>Valid Till: ${formattedToDate}</h3>
-                        <h3>Price: ${Math.round(row.price)}</h3>
-                    </div>
+                    <div class="ticket">                        
+                        <p style="font-size:40px;font-weight:900;text-align:center;margin:0;">Parking Meta</p>
+                        <p style="text-align: center;margin:0;font-size:30px">${dateToday}</p>
+                        <div class="box" style="margin:0; display:flex; justify-content:center; width:200px">${qrCodeSvg}</div>
+                        <p style="text-align: center;margin:0;font-size:30px;font-weight:700;">Client: ${row.first_name} ${row.last_name}</p>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px";><h3 style="font-size:20px">Entrance:</h3><p style="font-weight:700;font-size:25px">${formattedFromDate}</p></div>
+                       <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px;"><h3 style="font-size:20px">Expiring At:</h3><p style="font-weight:700; font-size:25px;">${formattedToDate}</p></div>
+                       <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px;"><h3 style="font-size:20px">Price:</h3><p style="font-weight:700; font-size:25px;">${Math.round(row.price)} mkd</p></div>
+                </div>
                 </body>
                 </html>
             `;
 
                 let ticketWindow = new BrowserWindow({
-                    width: 400,
+                    width: 350,
                     height: 600,
                     title: 'Print Ticket',
                     show: false,
