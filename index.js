@@ -9,21 +9,31 @@ const db = new sqlite3.Database(dbPath);
 db.serialize(() => {
     db.run(`
         CREATE TABLE IF NOT EXISTS transactions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            duration INTEGER,
-            created_at TEXT,
-            expires_at TEXT
+                                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                                    duration INTEGER,
+                                                    created_at TEXT,
+                                                    expires_at TEXT
         )
     `);
 
     db.run(`
         CREATE TABLE IF NOT EXISTS clients (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            first_name TEXT,
-            last_name TEXT,
-            full_name TEXT,
-            phone_number TEXT
+                                               id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                               first_name TEXT,
+                                               last_name TEXT,
+                                               phone_number TEXT
         )
+    `);
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS reservations (
+                                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                                    client_id INTEGER,
+                                                    from_date TEXT,
+                                                    to_date TEXT,
+                                                    price REAL,
+                                                    FOREIGN KEY (client_id) REFERENCES clients(id)
+            )
     `);
 });
 
@@ -62,25 +72,6 @@ function createWindow() {
         });
     });
 
-    ipcMain.on('get-transaction', (event, data) => {
-        db.get('SELECT * FROM transactions WHERE id = ?', [data.id], (err, row) => {
-            if (err || row == undefined) {
-                console.error('Error fetching transaction:', err);
-                event.reply('get-transaction-reply', { success: false, error: err?.message || "not found" });
-            } else {
-                const { ticketExpired, hoursExpired, extraCharge } = isTicketExpired(row.expires_at);
-                const ticketData = {
-                    ...row,
-                    date: moment(row.created_at).format('DD-MM-YYYY HH:mm:ss'),
-                    ticketExpired,
-                    hoursExpired,
-                    extraCharge
-                };
-                event.reply('get-transaction-reply', { success: true, transaction: ticketData });
-            }
-        });
-    });
-
     ipcMain.on('print-ticket', (event, ticketContent) => {
         win.webContents.send('print-ticket-renderer', ticketContent);
         win.webContents.print({ silent: false, printBackground: true }, (success, errorType) => {
@@ -93,10 +84,7 @@ function createWindow() {
     ipcMain.on('add-client', (event, data) => {
         const { firstName, lastName, phoneNumber } = data;
 
-        const fullName = `${firstName} ${lastName}`
-        console.log(fullName)
-
-        db.run('INSERT INTO clients (first_name, last_name, full_name, phone_number) VALUES (?, ?, ?, ?)', [firstName, lastName, fullName, phoneNumber], function(err) {
+        db.run('INSERT INTO clients (first_name, last_name, phone_number) VALUES (?, ?, ?)', [firstName, lastName, phoneNumber], function(err) {
             if (err) {
                 console.error('Error inserting client:', err);
             } else {
@@ -104,16 +92,170 @@ function createWindow() {
             }
         });
     });
-
-
-    ipcMain.on('get-client', (event, data) => {
-        db.all('SELECT * FROM clients WHERE full_name LIKE ?', [`%${data.fullName}%`], (err, row) => {
-            if (err || row == undefined) {
-                console.error('Error fetching transaction:', err);
-                event.reply('get-client-reply', { success: false, error: err?.message || "not found" });
+    ipcMain.on('get-clients', (event) => {
+        db.all('SELECT * FROM clients', [], (err, rows) => {
+            if (err) {
+                console.error('Error fetching clients:', err);
+                event.reply('load-clients', []);
             } else {
-                console.log(row)
-                event.reply('get-client-reply', { success: true, data: row });
+                event.reply('load-clients', rows);
+            }
+        });
+    });
+
+    const QRCode = require('qrcode');
+
+    function generateQRCode(qrID) {
+        return new Promise((resolve, reject) => {
+            QRCode.toString(qrID, { type: 'svg' }, (err, svg) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(svg);
+                }
+            });
+        });
+    }
+
+
+    async function printReservationTicket(reservationId) {
+        try {
+            const reservationQuery = `SELECT r.id, c.first_name, c.last_name, c.phone_number, r.from_date, r.to_date, r.price
+                                  FROM reservations r
+                                  JOIN clients c ON r.client_id = c.id
+                                  WHERE r.id = ?`;
+            db.get(reservationQuery, [reservationId], async (err, row) => {
+                if (err) {
+                    console.error('Error fetching reservation:', err);
+                    return;
+                }
+
+                const formattedFromDate = moment(row.from_date).format('DD.MM.YYYY HH:mm');
+                const formattedToDate = moment(row.to_date).format('DD.MM.YYYY HH:mm');
+                const dateToday = moment().format('DD.MM.YYYY');
+                const qrID = row.id.toString();
+
+                const qrCodeSvg = await generateQRCode(qrID);
+
+                let ticketContent = `
+                <html>
+                <head>
+                    <title>Parking Ticket</title>
+                    <style>
+                        body {
+                            font-family: Poppins;
+                            font-size: 16px;
+                            margin: 0;
+                            padding: 0;
+                        }
+                        .ticket {
+                            text-align: center;
+                            width: 100%;
+                            padding: 20px;
+                        }
+                        .ticket h1 {
+                            font-size: 24px;
+                            font-weight: bold;
+                            margin: 10px 0;
+                        }
+                        .ticket h3 {
+                            font-size: 18px;
+                            margin: 10px 0;
+                        }
+                        .ticket .date {
+                            font-size: 20px;
+                            font-weight: bold;
+                            margin: 20px 0;
+                        }
+                        .ticket .qr-code {
+                            margin: 20px auto;
+                            width: 150px;
+                            height: 150px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="ticket">
+                        <h1>Parking Meta</h1>
+                        <div class="date">${dateToday}</div>
+                        <div class="qr-code">${qrCodeSvg}</div>
+                        <h3>Client: ${row.first_name} ${row.last_name}</h3>
+                        <h3>Entrance: ${formattedFromDate}</h3>
+                        <h3>Valid Till: ${formattedToDate}</h3>
+                        <h3>Price: ${Math.round(row.price)}</h3>
+                    </div>
+                </body>
+                </html>
+            `;
+
+                let ticketWindow = new BrowserWindow({
+                    width: 400,
+                    height: 600,
+                    title: 'Print Ticket',
+                    show: false,
+                    webPreferences: {
+                        nodeIntegration: true,
+                        contextIsolation: false
+                    }
+                });
+
+                ticketWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(ticketContent)}`);
+
+                ticketWindow.webContents.on('did-finish-load', () => {
+                    ticketWindow.show();
+
+                    setTimeout(() => {
+                        ticketWindow.webContents.print({ silent: false, printBackground: true }, (success, errorType) => {
+                            if (!success) {
+                                console.error('Failed to print:', errorType);
+                            }
+                            ticketWindow.close();
+                        });
+                    }, 1000);
+                });
+
+            });
+        } catch (error) {
+            console.error('Error generating reservation ticket:', error);
+        }
+    }
+
+
+
+
+    ipcMain.on('create-reservation', (event, data) => {
+        const { clientId, fromDate, toDate, price } = data;
+
+        db.run('INSERT INTO reservations (client_id, from_date, to_date, price) VALUES (?, ?, ?, ?)', [clientId, fromDate, toDate, price], function(err) {
+            if (err) {
+                console.error('Error inserting reservation:', err);
+                event.reply('create-reservation-reply', { success: false, error: err.message });
+            } else {
+                console.log('Reservation created successfully.');
+                event.reply('create-reservation-reply', { success: true, id: this.lastID });
+                printReservationTicket(this.lastID);
+            }
+        });
+    });
+
+
+    ipcMain.on('search-reservations', (event, query) => {
+        db.all(`
+            SELECT r.id,
+                   c.first_name || ' ' || c.last_name AS client_name,
+                   r.from_date,
+                   r.to_date,
+                   r.price ,
+                   c.phone_number as client_number
+            FROM reservations r
+                     JOIN clients c ON r.client_id = c.id
+            WHERE c.first_name LIKE ? OR c.last_name LIKE ?
+        `, [`%${query}%`, `%${query}%`], (err, rows) => {
+            if (err) {
+                console.error('Error searching reservations:', err);
+                event.reply('search-reservations-reply', []);
+            } else {
+                event.reply('search-reservations-reply', rows);
             }
         });
     });
@@ -123,15 +265,6 @@ function createWindow() {
     win.on('closed', () => {
         db.close();
     });
-}
-
-function isTicketExpired(expirationTime) {
-    const now = moment();
-    const expiresAt = moment(expirationTime);
-    const hoursExpired = expiresAt.isBefore(now) ? now.diff(expiresAt, 'hours') : 0;
-    const ticketExpired = hoursExpired > 0;
-    const extraCharge = ticketExpired ? hoursExpired * 100 : 0;
-    return { ticketExpired, hoursExpired, extraCharge };
 }
 
 function printTicket(duration, createdAt, expiresAt) {

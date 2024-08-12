@@ -9,16 +9,10 @@
 <body>
 
 <div class="header">
-    <div style="display: flex;flex-direction: column">
-        <button class="button" id="scan">Scan</button>
-        <button class="button" id="reservation">Reservations</button>
-    </div>
     <div class="logo">Parking Meta</div>
-    <button class="button" onclick="scannerButtonChange(true); closePopup()" id="closeScanner" style="display: none">Cancel</button>
-    <div style="display: flex;flex-direction: column">
-        <button class="button" id="clients">Clients</button>
-        <button class="button" id="createReservation">+ Reservation</button>
-    </div>
+    <button class="button" id="clients">Client +</button>
+    <button class="button" id="reservations">Reservation +</button>
+    <button class="button" id="searchReservations">Search Reservations</button>
 </div>
 
 <div class="button-container" id="buttonContainer">
@@ -28,7 +22,7 @@
     <button class="button" onclick="startTransaction(3)">3hrs</button>
     <button class="button" onclick="showCustomInput()">Custom</button>
     <div id="customInput" style="display: none;">
-        <input type="number" id="customHours" placeholder="Enter hours">
+        <input type="number" id="customHours" placeholder="Enter hours" class="modal-input">
         <button class="button" onclick="startCustomTransaction()">Create</button>
     </div>
 </div>
@@ -40,77 +34,54 @@
     <div id="ticketContent"></div>
 </div>
 
-<div id="clientModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <button class="modal-close" onclick="closeClientModal()">x</button>
+<div id="clientModal" class="new-modal-overlay none">
+    <div class="new-modal">
+        <button class="new-modal-close" onclick="closeClientModal()">x</button>
         <h2>Add Client</h2>
         <label for="firstName">First Name:</label>
-        <input type="text" id="firstName" class="modal-input"><br>
+        <input type="text" id="firstName" class="new-modal-input"><br>
         <label for="lastName">Last Name:</label>
-        <input type="text" id="lastName" class="modal-input"><br>
+        <input type="text" id="lastName" class="new-modal-input"><br>
         <label for="phoneNumber">Phone Number:</label>
-        <input type="text" id="phoneNumber" class="modal-input"><br>
-        <button class="buttonClient" onclick="addClient()">Add Client</button>
+        <input type="text" id="phoneNumber" class="new-modal-input"><br>
+        <button class="modal-button" onclick="addClient()">Add Client</button>
     </div>
 </div>
 
-<div id="createReservationModal" class="modal" style="display: none;">
-
-    <div class="modal-content">
-
-        <button class="modal-close" onclick="closeCreateReservationModal()">x</button>
-
-        <input id="clientListSearch" list="clientsList" type="search" placeholder="Search ..." />
-        <datalist id="clientsList">
-            <option value="One">
-            <option value="Two">
-            <option value="Three">
-        </datalist>
-
-
-
+<div id="reservationModal" class="new-modal-overlay none">
+    <div class="new-modal">
+        <button class="new-modal-close" onclick="closeReservationModal()">x</button>
+        <h2>Create Reservation</h2>
+        <label for="clientSelect">Select Client:</label>
+        <select id="clientSelect" class="new-modal-input"></select><br>
+        <label for="fromDate">From Date:</label>
+        <input type="datetime-local" id="fromDate" class="new-modal-input"><br>
+        <label for="toDate">To Date:</label>
+        <input type="datetime-local" id="toDate" class="new-modal-input"><br>
+        <label for="price">Price:</label>
+        <input type="number" id="price" class="new-modal-input" min="0"><br>
+        <button class="modal-button" onclick="createReservation()">Create Reservation</button>
     </div>
 </div>
+
+<div id="searchReservationModal" class="new-modal-overlay none">
+    <div class="new-modal">
+        <button class="new-modal-close" onclick="closeSearchReservationModal()">x</button>
+        <h2>Search Reservations</h2>
+        <div id="searchForm">
+            <label for="searchName">Client Name:</label>
+            <input type="text" id="searchName" class="new-modal-input" placeholder="Enter client's name or surname"><br>
+            <button class="modal-button" onclick="searchReservations()">Search</button>
+        </div>
+        <button id="clearResultsBtn" class="modal-button" onclick="clearSearchResults()" style="display: none;">Back</button>
+        <div id="searchResults" style="margin-top: 20px;"></div>
+    </div>
+</div>
+
 
 <script>
-
-    //imports & init values
     const { ipcRenderer } = require('electron');
-    const { Html5Qrcode } = require("html5-qrcode");
     const QRCode = require("qrcode");
-
-    let html5QrCode;
-
-    const clientListSearchInput = document.getElementById("clientListSearch")
-
-    //Create Reservation
-
-    clientListSearchInput.addEventListener("input", (e) => {
-        const val = clientListSearchInput.value
-        console.log(val)
-        ipcRenderer.send('get-client', { fullName: val });
-    })
-
-    ipcRenderer.on('get-client-reply', (event, response) => {
-        if (response.success) {
-            console.log(response.data)
-            let searched = ""
-            response.data.forEach(e => searched+=`
-            <option value="${e.full_name}"
-            `)
-
-            console.log(searched)
-
-            document.getElementById("clientsList").innerHTML = searched
-
-        }
-    })
-
-    // ipcRenderer.send('store-transaction', { duration, expiresAt });
-
-
-
-
     function generateQRCode(qrID) {
         console.log("Generating QR code for ID:", qrID);
         return new Promise((resolve, reject) => {
@@ -130,82 +101,28 @@
         document.getElementById('modal').style.display = 'none';
     }
 
-    function stopQrCodeScanner() {
-        if (html5QrCode) {
-            html5QrCode.stop().then(() => {
-                console.log("QR Code scanner stopped.");
-                html5QrCode = null;
-            }).catch((err) => {
-                console.error("Error stopping QR Code scanner:", err);
-            });
-        }
+    function formattedDateTime(date) {
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${hours}:${minutes}`;
     }
 
-    document.getElementById("scan").addEventListener('click', () => {
-        scannerButtonChange(false);
-        stopQrCodeScanner();
-
-        ipcRenderer.on('get-transaction-reply', (event, response) => {
-            if (response.success) {
-                const { ticketExpired, hoursExpired, extraCharge } = response.transaction;
-
-                const expiryStatus = ticketExpired ?
-                    `Expired ${hoursExpired} hour${hoursExpired > 1 ? 's' : ''}` :
-                    response.transaction.expires_at.split(' ')[1];
-
-                document.getElementById('modal').style.display = 'flex';
-                document.getElementById('ticketContent').innerHTML =
-                    `<h1>Parking Meta</h1>
-                    <h3>Date: ${(() => {
-                        const date = new Date(response.transaction.created_at);
-                        const day = String(date.getDate()).padStart(2, '0');
-                        const month = String(date.getMonth() + 1).padStart(2, '0');
-                        const year = date.getFullYear();
-                        const hours = String(date.getHours()).padStart(2, '0');
-                        const minutes = String(date.getMinutes()).padStart(2, '0');
-                        const seconds = String(date.getSeconds()).padStart(2, '0');
-                        return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`;
-                    })()}</h3>
-                    <div class="box"></div>
-                    <h3>Time Created: ${response.transaction.created_at.split(' ')[1]}</h3>
-                    <h3>Duration: ${response.transaction.duration} hour${response.transaction.duration > 1 ? 's' : ''}</h3>
-                    <h3>Expiring At: ${expiryStatus}</h3>
-                    <h3 class="${!ticketExpired ? 'none' : ''}">Extra Charge: ${extraCharge} den (${hoursExpired} hours)</h3>`;
-            } else {
-                console.error("Error fetching transaction:", response.error);
-            }
-        });
-
-        const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-            ipcRenderer.send('get-transaction', { id: parseInt(decodedText) });
-        };
-
-        const config = { fps: 10, qrbox: 250 };
-        html5QrCode = new Html5Qrcode("reader");
-
-        html5QrCode.start(
-            { facingMode: "environment" },
-            config,
-            qrCodeSuccessCallback
-        ).catch(err => {
-            console.error(`Unable to start scanning, error: ${err}`);
-        });
-    });
+    function formatDateTime(dateTime) {
+        const date = new Date(dateTime);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${day}.${month}.${year} ${hours}:${minutes}`;
+    }
 
 
-    function scannerButtonChange(isOpen) {
-        if (isOpen) {
-            document.getElementById("scan").style.display = "block";
-            document.getElementById("closeScanner").style.display = "none";
-            document.getElementById("buttonContainer").style.display = "flex";
-            document.getElementById("reader").classList.add("none");
-            stopQrCodeScanner();
-            return;
-        }
-        document.getElementById("scan").style.display = "none";
-        document.getElementById("closeScanner").style.display = "block";
-        document.getElementById("buttonContainer").style.display = "none";
-        document.getElementById("reader").classList.remove("none");
+    function formattedDate(date) {
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}.${month}.${year}`;
     }
 
     function startTransaction(duration) {
@@ -223,6 +140,23 @@
         closeCustomTransaction();
     }
 
+    function showCustomInput() {
+        document.getElementById('customInput').style.display = 'block';
+    }
+
+    function closeCustomTransaction() {
+        document.getElementById('customInput').style.display = 'none';
+    }
+
+    function startCustomTransaction() {
+        const customHours = parseInt(document.getElementById('customHours').value);
+        if (!isNaN(customHours) && customHours > 0) {
+            startTransaction(customHours);
+        } else {
+            alert('Please enter a valid number of hours.');
+        }
+    }
+
     async function printTicket(duration, createdAt, expiresAt, qrID) {
         const formattedCreatedAt = formattedDateTime(createdAt);
         const formattedExpiresAt = formattedTime(expiresAt);
@@ -237,17 +171,17 @@
             const qrCodeSvg = await generateQRCode(qrID);
 
             let ticketContent = `
-                <p style="font-size:40px;font-weight:900;text-align:center;margin:0;">Parking Meta</p>
-                <p style="text-align: center;margin:0;font-size:30px">${dateToday}</p>
-                <div class="box" style="width:100%;margin:0; display:flex; justify-content:center; width:200px">${qrCodeSvg}</div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px";><h3 style="font-size:20px">Entrance:</h3><p style="font-size:25px">${formattedCreatedAt}</p></div>
-            `;
+                    <p style="font-size:40px;font-weight:900;text-align:center;margin:0;">Parking Meta</p>
+                    <p style="text-align: center;margin:0;font-size:30px">${dateToday}</p>
+                    <div class="box" style="margin:0; display:flex; justify-content:center; width:200px">${qrCodeSvg}</div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px";><h3 style="font-size:20px">Entrance:</h3><p style="font-size:25px">${formattedCreatedAt}</p></div>
+                `;
 
             if (duration > 0) {
                 ticketContent += `
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px";><h3 style="font-size:20px">Duration:</h3><p style="font-size:25px">${duration} hour${duration > 1 ? 's' : ''}</p></div>
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px;"><h3 style="font-size:20px">Expiring At:</h3><p style="font-weight:700; font-size:25px;">${formattedExpiresAt}</p></div>
-                `;
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px";><h3 style="font-size:20px">Duration:</h3><p style="font-size:25px">${duration} hour${duration > 1 ? 's' : ''}</p></div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px;"><h3 style="font-size:20px">Expiring At:</h3><p style="font-weight:700; font-size:25px;">${formattedExpiresAt}</p></div>
+                    `;
             }
 
             ticketContent += `</div>`;
@@ -274,72 +208,170 @@
         }
     }
 
-    function formattedDate(date) {
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        return `${day}.${month}.${year}`;
-    }
+    function openClientModal() {
+        document.getElementById('firstName').value = '';
+        document.getElementById('lastName').value = '';
+        document.getElementById('phoneNumber').value = '';
 
-    function formattedDateTime(date) {
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${hours}:${minutes}`;
-    }
-
-    function showCustomInput() {
-        document.getElementById('customInput').style.display = 'block';
-    }
-
-    function closeCustomTransaction() {
-        document.getElementById('customInput').style.display = 'none';
-        document.getElementById('customHours').value = '';
-    }
-
-    function startCustomTransaction() {
-        const hours = parseInt(document.getElementById('customHours').value);
-        if (isNaN(hours) || hours <= 0) {
-            alert('Please enter a valid number of hours.');
-            return;
-        }
-        startTransaction(hours);
-    }
-
-    document.getElementById("clients").addEventListener('click', () => {
         document.getElementById('clientModal').style.display = 'flex';
-    });
+    }
+
 
     function closeClientModal() {
         document.getElementById('clientModal').style.display = 'none';
     }
 
-    document.getElementById("createReservation").addEventListener('click', () => {
-        document.getElementById('createReservationModal').style.display = 'flex';
-    });
-    function closeCreateReservationModal() {
-        document.getElementById('createReservationModal').style.display = 'none';
-    }
-
     function addClient() {
-        const firstName = document.getElementById('firstName').value;
-        const lastName = document.getElementById('lastName').value;
-        const phoneNumber = document.getElementById('phoneNumber').value;
+        const firstName = document.getElementById('firstName').value.trim();
+        const lastName = document.getElementById('lastName').value.trim();
+        const phoneNumber = document.getElementById('phoneNumber').value.trim();
 
         if (!firstName || !lastName || !phoneNumber) {
-            alert('Please fill in all fields.');
+            alert('Please fill out all fields.');
             return;
         }
 
         ipcRenderer.send('add-client', { firstName, lastName, phoneNumber });
         closeClientModal();
+
+        ipcRenderer.once('add-client-reply', (event, response) => {
+            if (response.success) {
+                alert('Client added successfully!');
+            } else {
+                alert('Failed to add client.');
+            }
+        });
     }
 
-    document.getElementById("clients").addEventListener('click', () => {
-        document.getElementById('firstName').value = '';
-        document.getElementById('lastName').value = '';
-        document.getElementById('phoneNumber').value = '';
-        document.getElementById('clientModal').style.display = 'flex';
+
+    function openReservationModal() {
+        document.getElementById('clientSelect').innerHTML = '<option value="">Select a client</option>';
+        document.getElementById('fromDate').value = '';
+        document.getElementById('toDate').value = '';
+        document.getElementById('price').value = '';
+
+        document.getElementById('reservationModal').style.display = 'flex';
+
+        ipcRenderer.send('get-clients');
+
+        ipcRenderer.once('get-clients-reply', (event, clients) => {
+            const clientSelect = document.getElementById('clientSelect');
+            clientSelect.innerHTML = '<option value="">Select a client</option>';
+
+            clients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.id;
+                option.textContent = `${client.first_name} ${client.last_name}`;
+                clientSelect.appendChild(option);
+            });
+        });
+    }
+
+
+    function closeReservationModal() {
+        document.getElementById('reservationModal').style.display = 'none';
+    }
+
+    function createReservation() {
+        const clientId = parseInt(document.getElementById('clientSelect').value);
+        const fromDate = new Date(document.getElementById('fromDate').value);
+        const toDate = new Date(document.getElementById('toDate').value);
+        const price = parseFloat(document.getElementById('price').value);
+
+        if (isNaN(clientId) || !fromDate || !toDate || isNaN(price)) {
+            alert('Please fill out all fields correctly.');
+            return;
+        }
+
+        if (fromDate >= toDate) {
+            alert('The "From Date" must be earlier than the "To Date".');
+            return;
+        }
+
+        ipcRenderer.send('create-reservation', { clientId, fromDate: fromDate.toISOString(), toDate: toDate.toISOString(), price });
+
+        ipcRenderer.once('create-reservation-reply', (event, response) => {
+            if (response.success) {
+                closeReservationModal();
+            } else {
+                alert('Failed to create reservation.');
+            }
+        });
+    }
+
+
+    function openSearchReservationModal() {
+        document.getElementById('searchReservationModal').style.display = 'flex';
+        document.getElementById('searchForm').style.display = 'block';
+        document.getElementById('clearResultsBtn').style.display = 'none';
+        document.getElementById('searchResults').innerHTML = '';
+    }
+
+    function closeSearchReservationModal() {
+        document.getElementById('searchReservationModal').style.display = 'none';
+        document.getElementById('searchName').value = '';
+        document.getElementById('searchResults').innerHTML = '';
+    }
+
+    function searchReservations() {
+        const query = document.getElementById('searchName').value.trim();
+        if (!query) {
+            alert('Please enter a search query.');
+            return;
+        }
+
+        ipcRenderer.send('search-reservations', query);
+    }
+
+    ipcRenderer.on('search-reservations-reply', (event, reservations) => {
+        const resultsDiv = document.getElementById('searchResults');
+        const searchForm = document.getElementById('searchForm');
+        const clearResultsBtn = document.getElementById('clearResultsBtn');
+
+        searchForm.style.display = 'none';
+        clearResultsBtn.style.display = 'block';
+        resultsDiv.innerHTML = '';
+
+        if (reservations.length === 0) {
+            resultsDiv.innerHTML = '<p>No reservations found.</p>';
+            return;
+        }
+
+        reservations.forEach(reservation => {
+            const reservationDiv = document.createElement('div');
+            reservationDiv.innerHTML = `
+            <h3>Reservation ID: ${reservation.id}</h3>
+            <p>Client: ${reservation.client_name}</p>
+            <p>Phone Number: ${reservation.client_number}</p>
+            <p>From: ${formatDateTime(reservation.from_date)}</p>
+            <p>To: ${formatDateTime(reservation.to_date)}</p>
+            <p>Price: ${reservation.price}</p>
+        `;
+            resultsDiv.appendChild(reservationDiv);
+        });
     });
+
+    function clearSearchResults() {
+        document.getElementById('searchResults').innerHTML = '';
+        document.getElementById('searchForm').style.display = 'block';
+        document.getElementById('clearResultsBtn').style.display = 'none';
+    }
+
+
+    document.getElementById('clients').addEventListener('click', openClientModal);
+    document.getElementById('reservations').addEventListener('click', openReservationModal);
+    document.getElementById('searchReservations').addEventListener('click', openSearchReservationModal);
+    ipcRenderer.on('load-clients', (event, clients) => {
+        const clientSelect = document.getElementById('clientSelect');
+        clientSelect.innerHTML = '<option value="">Select a client</option>';
+        clients.forEach(client => {
+            const option = document.createElement('option');
+            option.value = client.id;
+            option.textContent = `${client.first_name} ${client.last_name}`;
+            clientSelect.appendChild(option);
+        });
+    });
+
 </script>
 
 </body>
