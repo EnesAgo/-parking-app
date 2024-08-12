@@ -195,6 +195,9 @@ body {
     border-radius: 4px;
     cursor: pointer;
 }
+#clientModal{
+    z-index: 5000;
+}
 .modal-button {
     padding: 12px 24px;
     font-size: 18px;

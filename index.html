@@ -53,7 +53,7 @@
         <button class="new-modal-close" onclick="closeReservationModal()">x</button>
         <h2>Create Reservation</h2>
         <label for="clientSelect">Select Client:</label>
-        <select id="clientSelect" class="new-modal-input"></select><br>
+        <div style="display: flex;width: 100%; gap: 10px"><select id="clientSelect" class="new-modal-input"></select> <button style="margin:0; height:35px;line-height: 15px" class="modal-button" id="addClientButton">ADD</button></div><br>
         <label for="fromDate">From Date:</label>
         <input type="datetime-local" id="fromDate" class="new-modal-input" onclick="this.showPicker()"><br>
         <label for="toDate">To Date:</label>
@@ -358,6 +358,10 @@
     }
 
 
+    document.getElementById('addClientButton').addEventListener('click', () => {
+        openClientModal();
+        ipcRenderer.send('get-clients');
+    });
     document.getElementById('clients').addEventListener('click', openClientModal);
     document.getElementById('reservations').addEventListener('click', openReservationModal);
     document.getElementById('searchReservations').addEventListener('click', openSearchReservationModal);

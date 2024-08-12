@@ -130,6 +130,7 @@ function createWindow() {
                     return;
                 }
 
+                const countDays = Math.abs(moment(row.from_date).diff(moment(row.to_date), 'days'))+1
                 const formattedFromDate = moment(row.from_date).format('DD.MM.YYYY HH:mm');
                 const formattedToDate = moment(row.to_date).format('DD.MM.YYYY HH:mm');
                 const dateToday = moment().format('DD.MM.YYYY');
@@ -176,6 +177,7 @@ function createWindow() {
                         <p style="text-align: center;margin:0;font-size:30px;font-weight:700;">Client: ${row.first_name} ${row.last_name}</p>
                         <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px";><h3 style="font-size:20px">Entrance:</h3><p style="font-weight:700;font-size:25px">${formattedFromDate}</p></div>
                        <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px;"><h3 style="font-size:20px">Expiring At:</h3><p style="font-weight:700; font-size:25px;">${formattedToDate}</p></div>
+                       <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px;"><h3 style="font-size:20px">Days:</h3><p style="font-weight:700; font-size:25px;">${countDays}</p></div>
                        <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px;"><h3 style="font-size:20px">Price:</h3><p style="font-weight:700; font-size:25px;">${Math.round(row.price)} mkd</p></div>
                 </div>
                 </body>
