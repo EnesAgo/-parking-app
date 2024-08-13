@@ -84,14 +84,23 @@ function createWindow() {
     ipcMain.on('add-client', (event, data) => {
         const { firstName, lastName, phoneNumber } = data;
 
-        db.run('INSERT INTO clients (first_name, last_name, phone_number) VALUES (?, ?, ?)', [firstName, lastName, phoneNumber], function(err) {
+        db.run('INSERT INTO clients (first_name, last_name, phone_number) VALUES (?,?,?)', [firstName, lastName, phoneNumber], function(err) {
             if (err) {
                 console.error('Error inserting client:', err);
             } else {
                 console.log('Client inserted successfully.');
+                event.reply('add-client-reply', { success: true });
+                db.all('SELECT * FROM clients', [], (err, rows) => {
+                    if (err) {
+                        console.error('Error fetching clients:', err);
+                    } else {
+                        event.sender.send('update-client-list', rows);
+                    }
+                });
             }
         });
     });
+
     ipcMain.on('get-clients', (event) => {
         db.all('SELECT * FROM clients', [], (err, rows) => {
             if (err) {
@@ -175,8 +184,8 @@ function createWindow() {
                         <p style="text-align: center;margin:0;font-size:30px">${dateToday}</p>
                         <div class="box" style="margin:0; display:flex; justify-content:center; width:200px">${qrCodeSvg}</div>
                         <p style="text-align: center;margin:0;font-size:30px;font-weight:700;">Client: ${row.first_name} ${row.last_name}</p>
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px";><h3 style="font-size:20px">Entrance:</h3><p style="font-weight:700;font-size:25px">${formattedFromDate}</p></div>
-                       <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px;"><h3 style="font-size:20px">Expiring At:</h3><p style="font-weight:700; font-size:25px;">${formattedToDate}</p></div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px";><h3 style="font-size:20px">Start Date:</h3><p style="font-weight:700;font-size:25px">${formattedFromDate}</p></div>
+                       <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px;"><h3 style="font-size:20px">End Date:</h3><p style="font-weight:700; font-size:25px;">${formattedToDate}</p></div>
                        <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px;"><h3 style="font-size:20px">Days:</h3><p style="font-weight:700; font-size:25px;">${countDays}</p></div>
                        <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px;"><h3 style="font-size:20px">Price:</h3><p style="font-weight:700; font-size:25px;">${Math.round(row.price)} mkd</p></div>
                 </div>

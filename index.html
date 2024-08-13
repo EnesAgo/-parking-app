@@ -54,12 +54,12 @@
         <h2>Create Reservation</h2>
         <label for="clientSelect">Select Client:</label>
         <div style="display: flex;width: 100%; gap: 10px"><select id="clientSelect" class="new-modal-input"></select> <button style="margin:0; height:35px;line-height: 15px" class="modal-button" id="addClientButton">ADD</button></div><br>
-        <label for="fromDate">From Date:</label>
+        <label for="fromDate">Start Date:</label>
         <input type="datetime-local" id="fromDate" class="new-modal-input" onclick="this.showPicker()"><br>
-        <label for="toDate">To Date:</label>
+        <label for="toDate">End Date:</label>
         <input type="datetime-local" id="toDate" class="new-modal-input" onclick="this.showPicker()"><br>
         <label for="price">Price:</label>
-        <input type="number" id="price" class="new-modal-input" min="0" style="cursor:auto;"><br>
+        <input type="number" id="price" class="new-modal-input" min="0" ><br>
         <button class="modal-button" onclick="createReservation()">Create Reservation</button>
     </div>
 </div>
@@ -226,22 +226,20 @@
         const lastName = document.getElementById('lastName').value.trim();
         const phoneNumber = document.getElementById('phoneNumber').value.trim();
 
-        if (!firstName || !lastName || !phoneNumber) {
+        if (!firstName ||!lastName ||!phoneNumber) {
             alert('Please fill out all fields.');
             return;
         }
 
         ipcRenderer.send('add-client', { firstName, lastName, phoneNumber });
         closeClientModal();
-
         ipcRenderer.once('add-client-reply', (event, response) => {
             if (response.success) {
-                alert('Client added successfully!');
-            } else {
-                alert('Failed to add client.');
+                ipcRenderer.send('update-client-list');
             }
         });
     }
+
 
 
     function openReservationModal() {
@@ -338,15 +336,20 @@
         }
 
         reservations.forEach(reservation => {
+            const startDate = new Date(reservation.from_date);
+            const endDate = new Date(reservation.to_date);
+            const differenceInMs = endDate - startDate;
+            const differenceInDays = Math.ceil(differenceInMs / (1000 * 60 * 60 * 24)) + 1;
             const reservationDiv = document.createElement('div');
             reservationDiv.innerHTML = `
-            <h3>Reservation ID: ${reservation.id}</h3>
-            <p>Client: ${reservation.client_name}</p>
-            <p>Phone Number: ${reservation.client_number}</p>
-            <p>From: ${formatDateTime(reservation.from_date)}</p>
-            <p>To: ${formatDateTime(reservation.to_date)}</p>
-            <p>Price: ${reservation.price}</p>
-        `;
+        <h3>Reservation ID: ${reservation.id}</h3>
+        <p>Client: ${reservation.client_name}</p>
+        <p>Phone Number: ${reservation.client_number}</p>
+        <p>Start Date: ${formatDateTime(reservation.from_date)}</p>
+        <p>End Date: ${formatDateTime(reservation.to_date)}</p>
+        <p>Days: ${differenceInDays}</p>
+        <p>Price: ${reservation.price}</p>
+    `;
             resultsDiv.appendChild(reservationDiv);
         });
     });
@@ -375,6 +378,19 @@
             clientSelect.appendChild(option);
         });
     });
+
+    ipcRenderer.on('update-client-list', (event, clients) => {
+        const clientSelect = document.getElementById('clientSelect');
+        clientSelect.innerHTML = '<option value="">Select a client</option>';
+        clients.forEach(client => {
+            const option = document.createElement('option');
+            option.value = client.id;
+            option.textContent = `${client.first_name} ${client.last_name}`;
+            clientSelect.appendChild(option);
+        });
+        clientSelect.selectedIndex = clients.length;
+    });
+
 
 </script>
 
