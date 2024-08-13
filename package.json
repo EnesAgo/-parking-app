@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "electron-packager <sourcedir> <appname> --platform=win32 --arch=x64",
+    "build": "electron-packager . metaparking --platform=win32 --arch=x64",
     "start": "electron ."
   },
   "keywords": [],
