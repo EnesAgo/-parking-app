@@ -1,7 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const { v4: uuidv4 } = require('uuid');
-
 
 
 require('dotenv').config()
@@ -22,7 +20,7 @@ const transactionRouter = require("./src/Transactions/controller")
 const reservationRouter = require("./src/Reservations/controller")
 
 app.get("/", (req, res) => {
-    res.json("hello world")
+    res.json("Hello World!")
 })
 
 

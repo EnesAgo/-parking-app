@@ -1,41 +1,9 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
 const moment = require('moment-timezone');
+const axios = require('axios');
+const QRCode = require('qrcode');
 
-const dbPath = path.join(app.getAppPath(), 'transactions.db');
-const db = new sqlite3.Database(dbPath);
-
-db.serialize(() => {
-    db.run(`
-        CREATE TABLE IF NOT EXISTS transactions (
-                                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                                    duration INTEGER,
-                                                    created_at TEXT,
-                                                    expires_at TEXT
-        )
-    `);
-
-    db.run(`
-        CREATE TABLE IF NOT EXISTS clients (
-                                               id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                               first_name TEXT,
-                                               last_name TEXT,
-                                               phone_number TEXT
-        )
-    `);
-
-    db.run(`
-        CREATE TABLE IF NOT EXISTS reservations (
-                                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                                    client_id INTEGER,
-                                                    from_date TEXT,
-                                                    to_date TEXT,
-                                                    price REAL,
-                                                    FOREIGN KEY (client_id) REFERENCES clients(id)
-            )
-    `);
-});
+const BASE_URL = 'http://localhost:3001';
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -50,26 +18,36 @@ function createWindow() {
 
     win.loadFile('index.html');
 
-    ipcMain.on('store-transaction', (event, data) => {
-        const { duration, expiresAt } = data;
+    ipcMain.on('store-transaction', async (event, data) => {
+        const { duration } = data;
         const formattedCreatedAt = moment().tz('Europe/Skopje').format('YYYY-MM-DD HH:mm:ss');
-        const expiresAtFormatted = duration > 0 ? moment(expiresAt).tz('Europe/Skopje').format('YYYY-MM-DD HH:mm:ss') : null;
+        const expiresAtFormatted = duration > 0
+            ? moment(formattedCreatedAt).add(duration, 'hours').format('YYYY-MM-DD HH:mm:ss')
+            : null;
 
-        db.run('INSERT INTO transactions (duration, created_at, expires_at) VALUES (?, ?, ?)', [duration, formattedCreatedAt, expiresAtFormatted], function(err) {
-            if (err) {
-                console.error('Error inserting transaction:', err);
-                event.reply('store-transaction-reply', { success: false, error: err.message });
-            } else {
-                const transactionId = this.lastID;
+        try {
+            const response = await axios.post(`${BASE_URL}/transactions/add-transaction`, {
+                duration,
+                created_at: formattedCreatedAt,
+                expires_at: expiresAtFormatted
+            });
+
+            if (response.status === 200 && response.data.data) {
+                const { transactionId } = response.data.data;
                 console.log('Transaction inserted successfully.');
                 event.reply('store-transaction-reply', { success: true, id: transactionId });
-                if (duration > 0) {
-                    printTicket(duration, formattedCreatedAt, expiresAtFormatted);
-                } else {
-                    printTicket(duration, formattedCreatedAt, null);
-                }
+
+                printTicket(duration, formattedCreatedAt, expiresAtFormatted || null);
+            } else {
+                console.error('Unexpected API response:', response.data);
+                throw new Error('Failed to insert transaction');
             }
-        });
+        } catch (error) {
+            console.error('Error inserting transaction:', error.message);
+            if (error.response) {
+            }
+            event.reply('store-transaction-reply', { success: false, error: error.message });
+        }
     });
 
     ipcMain.on('print-ticket', (event, ticketContent) => {
@@ -81,38 +59,37 @@ function createWindow() {
         });
     });
 
-    ipcMain.on('add-client', (event, data) => {
+    ipcMain.on('add-client', async (event, data) => {
         const { firstName, lastName, phoneNumber } = data;
 
-        db.run('INSERT INTO clients (first_name, last_name, phone_number) VALUES (?,?,?)', [firstName, lastName, phoneNumber], function(err) {
-            if (err) {
-                console.error('Error inserting client:', err);
-            } else {
-                console.log('Client inserted successfully.');
-                event.reply('add-client-reply', { success: true });
-                db.all('SELECT * FROM clients', [], (err, rows) => {
-                    if (err) {
-                        console.error('Error fetching clients:', err);
-                    } else {
-                        event.sender.send('update-client-list', rows);
-                    }
-                });
-            }
-        });
+        try {
+            await axios.post(`${BASE_URL}/clients/add-client`, {
+                firstName,
+                lastName,
+                phoneNumber
+            });
+
+            const response = await axios.get(`${BASE_URL}/clients`);
+            const clients = response.data;
+
+            event.reply('add-client-reply', { success: true });
+            event.sender.send('update-client-list', clients);
+        } catch (error) {
+            console.error('Error handling client request:', error);
+            event.reply('add-client-reply', { success: false, error: error.message });
+        }
     });
 
-    ipcMain.on('get-clients', (event) => {
-        db.all('SELECT * FROM clients', [], (err, rows) => {
-            if (err) {
-                console.error('Error fetching clients:', err);
-                event.reply('load-clients', []);
-            } else {
-                event.reply('load-clients', rows);
-            }
-        });
+    ipcMain.on('get-clients', async (event) => {
+        try {
+            const response = await axios.get(`${BASE_URL}/clients`);
+            const clients = response.data;
+            event.reply('load-clients', clients);
+        } catch (error) {
+            console.error('Error fetching clients:', error);
+            event.reply('load-clients', []);
+        }
     });
-
-    const QRCode = require('qrcode');
 
     function generateQRCode(qrID) {
         return new Promise((resolve, reject) => {
@@ -126,146 +103,132 @@ function createWindow() {
         });
     }
 
-
     async function printReservationTicket(reservationId) {
         try {
-            const reservationQuery = `SELECT r.id, c.first_name, c.last_name, c.phone_number, r.from_date, r.to_date, r.price
-                                  FROM reservations r
-                                  JOIN clients c ON r.client_id = c.id
-                                  WHERE r.id = ?`;
-            db.get(reservationQuery, [reservationId], async (err, row) => {
-                if (err) {
-                    console.error('Error fetching reservation:', err);
-                    return;
+            const response = await axios.get(`${BASE_URL}/reservations/${reservationId}`);
+            const row = response.data;
+            if (!row) {
+                console.error('Reservation not found');
+                return;
+            }
+
+            const countDays = Math.abs(moment(row.from_date).diff(moment(row.to_date), 'days')) + 1;
+            const formattedFromDate = moment(row.from_date).format('DD.MM.YYYY HH:mm');
+            const formattedToDate = moment(row.to_date).format('DD.MM.YYYY HH:mm');
+            const dateToday = moment().format('DD.MM.YYYY');
+            const qrID = row.id.toString();
+
+            const qrCodeSvg = await generateQRCode(qrID);
+
+            let ticketContent = `
+        <html>
+        <head>
+            <title>Parking Ticket</title>
+            <style>
+                html,body {
+                    width: 100%;
+                    height: 100%
                 }
+                body {
+                    font-family: Poppins;
+                    font-size: 16px;
+                    margin: 0;
+                    padding: 0;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+                .ticket {
+                    text-align: center;
+                    width: 100%;
+                    height: 100%;
+                    padding: 5px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 15px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="ticket">                        
+                <p style="font-size:40px;font-weight:900;text-align:center;margin:0;">Parking Meta</p>
+                <p style="text-align: center;margin:0;font-size:30px">${dateToday}</p>
+                <div class="box" style="margin:0; display:flex; justify-content:center; width:200px">${qrCodeSvg}</div>
+                <p style="text-align: center;margin:0;font-size:20px;font-weight:600;">Client: ${row.first_name} ${row.last_name}</p>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px";><h3 style="font-size:20px">Start Date:</h3><p style="font-weight:500;font-size:20px">${formattedFromDate}</p></div>
+               <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px;"><h3 style="font-size:20px">End Date:</h3><p style="font-weight:500; font-size:20px;">${formattedToDate}</p></div>
+               <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px;"><h3 style="font-size:20px">Days:</h3><p style="font-weight:500; font-size:20px;">${countDays}</p></div>
+               <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px;"><h3 style="font-size:20px">Price:</h3><p style="font-weight:500; font-size:20px;">${Math.round(row.price)}</p></div>
+        </div>
+        </body>
+        </html>
+        `;
 
-                const countDays = Math.abs(moment(row.from_date).diff(moment(row.to_date), 'days'))+1
-                const formattedFromDate = moment(row.from_date).format('DD.MM.YYYY HH:mm');
-                const formattedToDate = moment(row.to_date).format('DD.MM.YYYY HH:mm');
-                const dateToday = moment().format('DD.MM.YYYY');
-                const qrID = row.id.toString();
-
-                const qrCodeSvg = await generateQRCode(qrID);
-
-                let ticketContent = `
-                <html>
-                <head>
-                    <title>Parking Ticket</title>
-                    <style>
-                        html,body {
-                            width: 100%;
-                            height: 100%
-                        }
-                        body {
-                            font-family: Poppins;
-                            font-size: 16px;
-                            margin: 0;
-                            padding: 0;
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                        }
-                        .ticket {
-                            text-align: center;
-                            width: 100%;
-                            height: 100%;
-                            padding: 20px;
-                            display: flex;
-                            flex-direction: column;
-                            align-items: center;
-                            gap: 20px;
-                        }
-
-                    </style>
-                </head>
-                <body>
-                    <div class="ticket">                        
-                        <p style="font-size:40px;font-weight:900;text-align:center;margin:0;">Parking Meta</p>
-                        <p style="text-align: center;margin:0;font-size:30px">${dateToday}</p>
-                        <div class="box" style="margin:0; display:flex; justify-content:center; width:200px">${qrCodeSvg}</div>
-                        <p style="text-align: center;margin:0;font-size:30px;font-weight:700;">Client: ${row.first_name} ${row.last_name}</p>
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px";><h3 style="font-size:20px">Start Date:</h3><p style="font-weight:700;font-size:25px">${formattedFromDate}</p></div>
-                       <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px;"><h3 style="font-size:20px">End Date:</h3><p style="font-weight:700; font-size:25px;">${formattedToDate}</p></div>
-                       <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px;"><h3 style="font-size:20px">Days:</h3><p style="font-weight:700; font-size:25px;">${countDays}</p></div>
-                       <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px;"><h3 style="font-size:20px">Price:</h3><p style="font-weight:700; font-size:25px;">${Math.round(row.price)} mkd</p></div>
-                </div>
-                </body>
-                </html>
-            `;
-
-                let ticketWindow = new BrowserWindow({
-                    width: 350,
-                    height: 600,
-                    title: 'Print Ticket',
-                    show: false,
-                    webPreferences: {
-                        nodeIntegration: true,
-                        contextIsolation: false
-                    }
-                });
-
-                ticketWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(ticketContent)}`);
-
-                ticketWindow.webContents.on('did-finish-load', () => {
-                    ticketWindow.show();
-
-                    setTimeout(() => {
-                        ticketWindow.webContents.print({ silent: false, printBackground: true }, (success, errorType) => {
-                            if (!success) {
-                                console.error('Failed to print:', errorType);
-                            }
-                            ticketWindow.close();
-                        });
-                    }, 1000);
-                });
-
+            let ticketWindow = new BrowserWindow({
+                width: 350,
+                height: 620,
+                title: 'Print Ticket',
+                show: false,
+                webPreferences: {
+                    nodeIntegration: true,
+                    contextIsolation: false
+                }
             });
+
+            ticketWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(ticketContent)}`);
+
+            ticketWindow.webContents.on('did-finish-load', () => {
+                ticketWindow.show();
+
+                setTimeout(() => {
+                    ticketWindow.webContents.print({ silent: false, printBackground: true }, (success, errorType) => {
+                        if (!success) {
+                            console.error('Failed to print:', errorType);
+                        }
+                        ticketWindow.close();
+                    });
+                }, 1000);
+            });
+
         } catch (error) {
             console.error('Error generating reservation ticket:', error);
+            console.error('Full error details:', error.response ? error.response.data : error.message);
         }
     }
 
-
-
-
-    ipcMain.on('create-reservation', (event, data) => {
+    ipcMain.on('create-reservation', async (event, data) => {
         const { clientId, fromDate, toDate, price } = data;
 
-        db.run('INSERT INTO reservations (client_id, from_date, to_date, price) VALUES (?, ?, ?, ?)', [clientId, fromDate, toDate, price], function(err) {
-            if (err) {
-                console.error('Error inserting reservation:', err);
-                event.reply('create-reservation-reply', { success: false, error: err.message });
-            } else {
-                console.log('Reservation created successfully.');
-                event.reply('create-reservation-reply', { success: true, id: this.lastID });
-                printReservationTicket(this.lastID);
-            }
-        });
+        try {
+            const response = await axios.post(`${BASE_URL}/reservations/add-reservation`, {
+                clientId,
+                fromDate,
+                toDate,
+                price
+            });
+
+            const { id } = response.data;
+            event.reply('create-reservation-reply', { success: true, id });
+
+            printReservationTicket(id);
+        } catch (error) {
+            console.error('Error creating reservation:', error);
+            event.reply('create-reservation-reply', { success: false, error: error.message });
+        }
     });
 
-
-    ipcMain.on('search-reservations', (event, query) => {
-        db.all(`
-            SELECT r.id,
-                   c.first_name || ' ' || c.last_name AS client_name,
-                   r.from_date,
-                   r.to_date,
-                   r.price ,
-                   c.phone_number as client_number
-            FROM reservations r
-                     JOIN clients c ON r.client_id = c.id
-            WHERE c.first_name LIKE ? OR c.last_name LIKE ?
-        `, [`%${query}%`, `%${query}%`], (err, rows) => {
-            if (err) {
-                console.error('Error searching reservations:', err);
-                event.reply('search-reservations-reply', []);
-            } else {
-                event.reply('search-reservations-reply', rows);
-            }
-        });
+    ipcMain.on('search-reservations', async (event, query) => {
+        try {
+            const response = await axios.get(`${BASE_URL}/reservations/search`, {
+                params: { q: query }
+            });
+            event.reply('search-reservations-reply', response.data);
+        } catch (error) {
+            console.error('Error searching reservations:', error);
+            event.reply('search-reservations-reply', []);
+        }
     });
-
-
 
     win.on('closed', () => {
         db.close();

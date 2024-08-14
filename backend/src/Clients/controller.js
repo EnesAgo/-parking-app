@@ -7,7 +7,7 @@ router.get("/", async (req, res) => {
     try{
 
         db.all('SELECT * FROM clients', [], (err, rows) => {
-            if (err) {
+            if (err || rows == null) {
                 console.error('Error fetching clients:', err);
                 res.json({error: err}).status(500)
             } else {

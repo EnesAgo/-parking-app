@@ -11,7 +11,7 @@ router.get("/", async (req, res) => {
     try{
 
         db.all('SELECT * FROM transactions', [], (err, row) => {
-            if (err) {
+            if (err || row == null) {
                 console.error('Error fetching transaction:', err);
                 res.json({error: err}).status(500)
             } else {
@@ -31,7 +31,7 @@ router.get("/:id", async (req, res) => {
     try{
 
         db.get('SELECT * FROM transactions WHERE id = ?', [id], (err, row) => {
-            if (err) {
+            if (err || row == null) {
                 console.error('Error fetching transaction:', err);
                 res.json({error: err}).status(500)
             } else {
@@ -46,26 +46,36 @@ router.get("/:id", async (req, res) => {
 })
 
 router.post("/add-transaction", async (req, res) => {
-    const { duration, expiresAt } = req.body;
+    const { duration } = req.body;
     const formattedCreatedAt = moment().tz('Europe/Skopje').format('YYYY-MM-DD HH:mm:ss');
-    const expiresAtFormatted = duration > 0 ? moment(expiresAt).tz('Europe/Skopje').format('YYYY-MM-DD HH:mm:ss') : null;
+    const expiresAtFormatted = duration > 0
+        ? moment(formattedCreatedAt).add(duration, 'hours').format('YYYY-MM-DD HH:mm:ss')
+        : null;
 
-
-    try{
+    try {
         db.run('INSERT INTO transactions (duration, created_at, expires_at) VALUES (?, ?, ?)', [duration, formattedCreatedAt, expiresAtFormatted], function(err) {
             if (err) {
                 console.error('Error inserting transaction:', err);
-                res.json({error:err}).status(500)
+                return res.status(500).json({ error: err.message });
             } else {
                 const transactionId = this.lastID;
                 console.log('Transaction inserted successfully.');
-                res.json({data: {duration, createdAt: formattedCreatedAt, expiresAt: expiresAtFormatted, transactionId}})
+                return res.status(200).json({
+                    data: {
+                        duration,
+                        createdAt: formattedCreatedAt,
+                        expiresAt: expiresAtFormatted,
+                        transactionId
+                    }
+                });
             }
         });
     } catch (e) {
-        res.json({error: e}).status(500)
+        console.error('Unexpected error:', e);
+        return res.status(500).json({ error: e.message });
     }
-})
+});
+
 
 
 module.exports = router
