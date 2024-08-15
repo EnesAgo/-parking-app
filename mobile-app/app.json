@@ -28,7 +28,7 @@
     },
     "plugins": [
       "expo-router",
-      "expo-barcode-scanner",
+      "expo-barcode-scanner"
     ],
     "experiments": {
       "typedRoutes": true

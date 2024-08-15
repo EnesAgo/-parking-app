@@ -28,6 +28,8 @@ router.get("/:id", async (req, res) => {
 
     const id = req.params.id
 
+    console.log("yes")
+
     try{
 
         db.get('SELECT * FROM transactions WHERE id = ?', [id], (err, row) => {
