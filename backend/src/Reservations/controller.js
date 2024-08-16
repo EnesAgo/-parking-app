@@ -1,11 +1,14 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../dbController");
+const authenticateToken = require('../authMiddleware');
+
+router.use(authenticateToken);
 
 router.get("/", async (req, res) => {
     try {
         db.all('SELECT * FROM reservations', [], (err, rows) => {
-            if (err || rows == null) {
+            if (err) {
                 console.error('Error fetching reservations:', err);
                 res.status(500).json({error: err});
             } else {
@@ -31,7 +34,7 @@ router.get("/search", async (req, res) => {
                      JOIN clients c ON r.client_id = c.id
             WHERE c.first_name LIKE ? OR c.last_name LIKE ?
         `, [`%${q}%`, `%${q}%`], (err, rows) => {
-            if (err || rows == null) {
+            if (err) {
                 console.error('Error searching reservations:', err);
                 res.status(500).json({error: err});
             } else {
@@ -76,7 +79,7 @@ router.get("/:id", async (req, res) => {
         `;
 
         db.get(reservationQuery, [id], (err, row) => {
-            if (err || row == null) {
+            if (err) {
                 console.error('Error fetching reservation:', err);
                 res.status(500).json({error: err});
             } else if (!row) {

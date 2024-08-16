@@ -13,6 +13,7 @@
   "description": "",
   "dependencies": {
     "axios": "^1.7.3",
+    "dotenv": "^16.4.5",
     "electron": "^31.2.1",
     "moment-timezone": "^0.5.45",
     "qrcode": "^1.5.3"

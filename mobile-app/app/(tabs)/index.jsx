@@ -31,15 +31,32 @@ export default function HomeScreen() {
   }, []);
 
   const handleBarCodeScanned = async ({ type, data }) => {
-    setScanned(true);
+    // setScanned(true);
     setScannerDisplay(prev => !prev)
 
 
     if(scanType === 0){
-      alert(scanType)
-      const response = await HttpRequest.get(`/transactions/${data}`)
-      setResData(JSON.stringify(data))
-      alert(response)
+
+      try{
+        // alert(scanType)
+        const response = await HttpRequest.get(`/transactions/${data}`)
+        console.log(response)
+        setResData(JSON.stringify(response.data))
+        // alert(response)
+      } catch (e) {
+        console.log({error: e})
+      }
+
+    } else{
+      try{
+        // alert(scanType)
+        const response = await HttpRequest.get(`/reservations/${data}`)
+        console.log(response)
+        setResData(JSON.stringify(response))
+        // alert(response)
+      } catch (e) {
+        console.log({error: e})
+      }
     }
 
   };
@@ -80,8 +97,8 @@ export default function HomeScreen() {
               <View style={styles.buttonsDiv}>
 
                 <View style={styles.buttons}>
-                  <Button title={"Transac"} onPress={() => {setScannerDisplay(prev => !prev);setScanType(0)}} />
-                  <Button title={"Reserv"} onPress={() => {setScannerDisplay(prev => !prev);setScanType(1)}}  />
+                  <Button style={styles.button} title={"Transac"} onPress={() => {setScannerDisplay(prev => !prev);setScanType(0)}} />
+                  <Button style={styles.button} title={"Reserv"} onPress={() => {setScannerDisplay(prev => !prev);setScanType(1)}}  />
                 </View>
 
                 <View style={styles.dataView}>
@@ -133,8 +150,9 @@ const styles = StyleSheet.create({
   },
   buttons: {
     display: "flex",
-    flexDirection: "row",
-    width: "60%",
+    flexDirection: "column",
+    width: "70%",
+    gap: 10,
     justifyContent:"space-around",
     margin:10
   },
@@ -153,4 +171,10 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
   },
+  button: {
+    width: 150,
+    height:75,
+    padding: 20,
+    marginTop: 10
+  }
 });

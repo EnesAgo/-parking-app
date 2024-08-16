@@ -2,12 +2,15 @@ const express = require("express");
 const router = express.Router()
 
 const db = require("../dbController")
+const authenticateToken = require('../authMiddleware');
+
+router.use(authenticateToken);
 router.get("/", async (req, res) => {
 
     try{
 
         db.all('SELECT * FROM clients', [], (err, rows) => {
-            if (err || rows == null) {
+            if (err) {
                 console.error('Error fetching clients:', err);
                 res.json({error: err}).status(500)
             } else {

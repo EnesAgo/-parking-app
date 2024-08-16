@@ -3,6 +3,9 @@ const router = express.Router()
 const moment = require('moment-timezone');
 
 const db = require("../dbController")
+const authenticateToken = require('../authMiddleware');
+
+router.use(authenticateToken);
 
 router.get("/", async (req, res) => {
 
@@ -11,7 +14,7 @@ router.get("/", async (req, res) => {
     try{
 
         db.all('SELECT * FROM transactions', [], (err, row) => {
-            if (err || row == null) {
+            if (err) {
                 console.error('Error fetching transaction:', err);
                 res.json({error: err}).status(500)
             } else {
@@ -33,7 +36,7 @@ router.get("/:id", async (req, res) => {
     try{
 
         db.get('SELECT * FROM transactions WHERE id = ?', [id], (err, row) => {
-            if (err || row == null) {
+            if (err) {
                 console.error('Error fetching transaction:', err);
                 res.json({error: err}).status(500)
             } else {

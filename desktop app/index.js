@@ -2,8 +2,58 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const moment = require('moment-timezone');
 const axios = require('axios');
 const QRCode = require('qrcode');
+const path = require('path');
+const { spawn } = require('child_process');
+const fs = require('fs');
+const dotenv = require('dotenv');
+dotenv.config();
 
 const BASE_URL = 'http://localhost:3001';
+const NPM_PATH = '/usr/local/bin/npm';
+const SERVER_PATH = path.resolve('/Users/enesago/parking-meta-software-development/backend');
+const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
+console.log('Access Token:', ACCESS_TOKEN);
+let serverProcess;
+
+const axiosInstance = axios.create({
+    baseURL: BASE_URL,
+    headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}` }
+});
+
+
+function startExpressServer() {
+    console.log(`Starting Express server with ${NPM_PATH} in ${SERVER_PATH}`);
+
+    if (!fs.existsSync(NPM_PATH)) {
+        console.error(`npm executable not found at ${NPM_PATH}`);
+        return;
+    }
+
+    if (!fs.existsSync(SERVER_PATH)) {
+        console.error(`Server path not found: ${SERVER_PATH}`);
+        return;
+    }
+
+    serverProcess = spawn(NPM_PATH, ['run', 'dev'], {
+        cwd: SERVER_PATH,
+        stdio: 'inherit'
+    });
+
+    serverProcess.on('error', (error) => {
+        console.error('Error starting Express server:', error);
+    });
+
+    serverProcess.on('exit', (code) => {
+        console.log(`Express server exited with code ${code}`);
+    });
+}
+
+function stopExpressServer() {
+    if (serverProcess) {
+        serverProcess.kill('SIGTERM');
+        console.log('Express server stopped.');
+    }
+}
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -26,7 +76,7 @@ function createWindow() {
             : null;
 
         try {
-            const response = await axios.post(`${BASE_URL}/transactions/add-transaction`, {
+            const response = await axiosInstance.post('/transactions/add-transaction', {
                 duration,
                 created_at: formattedCreatedAt,
                 expires_at: expiresAtFormatted
@@ -44,8 +94,6 @@ function createWindow() {
             }
         } catch (error) {
             console.error('Error inserting transaction:', error.message);
-            if (error.response) {
-            }
             event.reply('store-transaction-reply', { success: false, error: error.message });
         }
     });
@@ -63,13 +111,13 @@ function createWindow() {
         const { firstName, lastName, phoneNumber } = data;
 
         try {
-            await axios.post(`${BASE_URL}/clients/add-client`, {
+            await axiosInstance.post(`${BASE_URL}/clients/add-client`, {
                 firstName,
                 lastName,
                 phoneNumber
             });
 
-            const response = await axios.get(`${BASE_URL}/clients`);
+            const response = await axiosInstance.get(`${BASE_URL}/clients`);
             const clients = response.data;
 
             event.reply('add-client-reply', { success: true });
@@ -82,7 +130,7 @@ function createWindow() {
 
     ipcMain.on('get-clients', async (event) => {
         try {
-            const response = await axios.get(`${BASE_URL}/clients`);
+            const response = await axiosInstance.get(`${BASE_URL}/clients`);
             const clients = response.data;
             event.reply('load-clients', clients);
         } catch (error) {
@@ -105,7 +153,7 @@ function createWindow() {
 
     async function printReservationTicket(reservationId) {
         try {
-            const response = await axios.get(`${BASE_URL}/reservations/${reservationId}`);
+            const response = await axiosInstance.get(`${BASE_URL}/reservations/${reservationId}`);
             const row = response.data;
             if (!row) {
                 console.error('Reservation not found');
@@ -121,7 +169,7 @@ function createWindow() {
             const qrCodeSvg = await generateQRCode(qrID);
 
             let ticketContent = `
-        <html>
+            <html>
         <head>
             <title>Parking Ticket</title>
             <style>
@@ -151,7 +199,7 @@ function createWindow() {
             </style>
         </head>
         <body>
-            <div class="ticket">                        
+            <div class="ticket">
                 <p style="font-size:40px;font-weight:900;text-align:center;margin:0;">Parking Meta</p>
                 <p style="text-align: center;margin:0;font-size:30px">${dateToday}</p>
                 <div class="box" style="margin:0; display:flex; justify-content:center; width:200px">${qrCodeSvg}</div>
@@ -163,11 +211,12 @@ function createWindow() {
         </div>
         </body>
         </html>
+
         `;
 
             let ticketWindow = new BrowserWindow({
                 width: 350,
-                height: 620,
+                height: 600,
                 title: 'Print Ticket',
                 show: false,
                 webPreferences: {
@@ -201,7 +250,7 @@ function createWindow() {
         const { clientId, fromDate, toDate, price } = data;
 
         try {
-            const response = await axios.post(`${BASE_URL}/reservations/add-reservation`, {
+            const response = await axiosInstance.post(`${BASE_URL}/reservations/add-reservation`, {
                 clientId,
                 fromDate,
                 toDate,
@@ -220,7 +269,7 @@ function createWindow() {
 
     ipcMain.on('search-reservations', async (event, query) => {
         try {
-            const response = await axios.get(`${BASE_URL}/reservations/search`, {
+            const response = await axiosInstance(`${BASE_URL}/reservations/search`, {
                 params: { q: query }
             });
             event.reply('search-reservations-reply', response.data);
@@ -231,7 +280,7 @@ function createWindow() {
     });
 
     win.on('closed', () => {
-        db.close();
+        stopExpressServer();
     });
 }
 
@@ -276,6 +325,7 @@ function printTicket(duration, createdAt, expiresAt) {
 }
 
 app.whenReady().then(() => {
+    startExpressServer();
     createWindow();
 });
 
