@@ -40,12 +40,19 @@ export default function HomeScreen() {
       try{
         // alert(scanType)
         const response = await HttpRequest.get(`/transactions/${data}`)
-        console.log(response)
-        setResData(JSON.stringify(response.data))
+        const id = response.data.id
+        const leaved = await HttpRequest.put(`/transactions/leave?id=${id}`)
+        const newData = await HttpRequest.get(`/transactions/${data}`)
+
+        console.log(newData)
+        setResData(JSON.stringify(newData.data))
         // alert(response)
       } catch (e) {
         console.log({error: e})
       }
+
+
+
 
     } else{
       try{
@@ -98,7 +105,7 @@ export default function HomeScreen() {
 
                 <View style={styles.buttons}>
                   <Button style={styles.button} title={"Transac"} onPress={() => {setScannerDisplay(prev => !prev);setScanType(0)}} />
-                  <Button style={styles.button} title={"Reserv"} onPress={() => {setScannerDisplay(prev => !prev);setScanType(1)}}  />
+                  {/*<Button style={styles.button} title={"Reserv"} onPress={() => {setScannerDisplay(prev => !prev);setScanType(1)}}  />*/}
                 </View>
 
                 <View style={styles.dataView}>

@@ -10,7 +10,8 @@ db.serialize(() => {
                                                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                                                     duration INTEGER,
                                                     created_at TEXT,
-                                                    expires_at TEXT
+                                                    expires_at TEXT,
+                                                    leaved_at TEXT
         )
     `);
 
