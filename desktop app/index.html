@@ -9,10 +9,27 @@
 <body>
 
 <div class="header">
-    <div class="logo">Parking Meta</div>
-    <button class="button" id="clients">Client +</button>
-    <button class="button" id="reservations">Reservation +</button>
-    <button class="button" id="searchReservations">Search Reservations</button>
+    <div class="logo">
+        <img src="images/Logo.png" alt="logo">
+    </div>
+    <h1>Welcome to <i>META Parking!</i></h1>
+    <div></div>
+<!--    <button class="button" id="clients">Client +</button>-->
+<!--    <button class="button" id="reservations">Reservation +</button>-->
+<!--    <button class="button" id="searchReservations">Search Reservations</button>-->
+
+
+    <nav id="sidebar" class="nav">
+        <ul>
+            <li><button id="clients">Client +</button></li>
+            <li><button id="reservations">Reservation +</button></li>
+            <li><button id="searchReservations">Search Reservations</button></li>
+        </ul>
+    </nav>
+    <div id="hamburgerMenu" class="nav-toggle">
+        <div class="nav-toggle-bar"></div>
+    </div>
+
 </div>
 
 <div class="button-container" id="buttonContainer">
@@ -96,6 +113,22 @@
             });
         });
     }
+
+
+    //hamburger menu
+    const hamburger = {
+        navToggle: document.getElementById('hamburgerMenu'),
+        nav: document.getElementById('sidebar'),
+        doToggle: function(e) {
+            e.preventDefault();
+            this.navToggle.classList.toggle('expanded');
+            this.nav.classList.toggle('expanded');
+        }
+    };
+    hamburger.navToggle.addEventListener('click', function(e) { hamburger.doToggle(e); });
+    hamburger.nav.addEventListener('click', function(e) { hamburger.doToggle(e); });
+
+
 
     function closePopup() {
         document.getElementById('modal').style.display = 'none';

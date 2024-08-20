@@ -18,17 +18,118 @@ body {
     width: 100%;
     display: flex;
     justify-content: space-between;
+    align-items: center;
     position: absolute;
     top: 20px;
+
 }
 .header * {
     margin: 0 20px;
 }
-.header .logo {
+
+.header .logo img{
     font-family: 'Pacifico', cursive;
     font-size: 24px;
     color: #007bff;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    height: 70px;
+}
+
+.nav {
+    -webkit-transition: right 0.5s ease;
+    -moz-transition: right 0.5s ease;
+    -ms-transition: right 0.5s ease;
+    -o-transition: right 0.5s ease;
+    transition: right 0.5s ease;
+    background: #28dde0;
+    color: white;
+    cursor: pointer;
+    font-size: 2rem;
+    height: 100vh;
+    right: -40rem;
+    padding: 8rem 1rem 1rem 1rem;
+    position: fixed;
+    top: 0;
+    width: 15rem;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+}
+.nav.expanded { right: -2rem; }
+.nav ul {
+    list-style: none;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: start;
+    gap: 20px;
+}
+.nav ul li{
+    margin:0;
+}
+.nav ul li button {
+    margin:0;
+    padding: 12px 24px;
+    width: 160px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.nav-toggle {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    cursor: pointer;
+    height: 2rem;
+    right: 2rem;
+    position: fixed;
+    top: 2rem;
+    width: 2.4rem;
+    z-index: 2;
+}
+.nav-toggle:hover { opacity: 0.8; }
+.nav-toggle .nav-toggle-bar,  .nav-toggle .nav-toggle-bar::after,  .nav-toggle .nav-toggle-bar::before {
+    position: absolute;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+    -webkit-transition: all 0.5s ease;
+    -moz-transition: all 0.5s ease;
+    -ms-transition: all 0.5s ease;
+    -o-transition: all 0.5s ease;
+    transition: all 0.5s ease;
+    background: black;
+    content: '';
+    height: 0.2rem;
+    width: 100%;
+}
+.nav-toggle .nav-toggle-bar { margin-top: 0; }
+.nav-toggle .nav-toggle-bar::after { margin-top: 0.5rem; }
+.nav-toggle .nav-toggle-bar::before { margin-top: -0.5rem; }
+.nav-toggle.expanded .nav-toggle-bar { background: transparent; }
+.nav-toggle.expanded .nav-toggle-bar::after, .nav-toggle.expanded .nav-toggle-bar::before {
+    background: white;
+    margin-top: 0;
+}
+.nav-toggle.expanded .nav-toggle-bar::after {
+    -ms-transform: rotate(45deg);
+    -webkit-transform: rotate(45deg);
+    transform: rotate(45deg);
+}
+.nav-toggle.expanded .nav-toggle-bar::before {
+    -ms-transform: rotate(-45deg);
+    -webkit-transform: rotate(-45deg);
+    transform: rotate(-45deg);
 }
 
 .button-container {
