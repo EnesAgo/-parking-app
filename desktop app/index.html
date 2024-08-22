@@ -1,380 +1,417 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parking Meta</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
-<div class="header">
-    <div class="logo">
-        <img src="images/Logo.png" alt="logo">
-    </div>
-    <h1>Welcome to <i>META Parking!</i></h1>
-    <div></div>
-<!--    <button class="button" id="clients">Client +</button>-->
-<!--    <button class="button" id="reservations">Reservation +</button>-->
-<!--    <button class="button" id="searchReservations">Search Reservations</button>-->
-
-
-    <nav id="sidebar" class="nav">
-        <ul>
-            <li><button id="clients">Client +</button></li>
-            <li><button id="reservations">Reservation +</button></li>
-            <li><button id="searchReservations">Search Reservations</button></li>
-        </ul>
-    </nav>
-    <div id="hamburgerMenu" class="nav-toggle">
-        <div class="nav-toggle-bar"></div>
-    </div>
-
-</div>
-
-<div class="button-container" id="buttonContainer">
-    <button class="button" onclick="startTransaction(0)">0</button>
-    <button class="button" onclick="startTransaction(1)">1hr</button>
-    <button class="button" onclick="startTransaction(2)">2hrs</button>
-    <button class="button" onclick="startTransaction(3)">3hrs</button>
-    <button class="button" onclick="showCustomInput()">Custom</button>
-    <div id="customInput" style="display: none;">
-        <input type="number" id="customHours" placeholder="Enter hours" class="modal-input">
-        <button class="button" onclick="startCustomTransaction()">Create</button>
-    </div>
-</div>
-
-<div id="reader" class="none" style="width: 400px;"></div>
-
-<div id="modal" class="popup" style="display: none;">
-    <button onclick="closePopup()" id="close-btn">x</button>
-    <div id="ticketContent"></div>
-</div>
-
-<div id="clientModal" class="new-modal-overlay none">
-    <div class="new-modal">
-        <button class="new-modal-close" onclick="closeClientModal()">x</button>
-        <h2>Add Client</h2>
-        <label for="firstName">First Name:</label>
-        <input type="text" id="firstName" class="new-modal-input"><br>
-        <label for="lastName">Last Name:</label>
-        <input type="text" id="lastName" class="new-modal-input"><br>
-        <label for="phoneNumber">Phone Number:</label>
-        <input type="text" id="phoneNumber" class="new-modal-input"><br>
-        <button class="modal-button" onclick="addClient()">Add Client</button>
-    </div>
-</div>
-
-<div id="reservationModal" class="new-modal-overlay none">
-    <div class="new-modal">
-        <button class="new-modal-close" onclick="closeReservationModal()">x</button>
-        <h2>Create Reservation</h2>
-        <label for="clientSelect">Select Client:</label>
-        <div style="display: flex;width: 100%; gap: 10px"><select id="clientSelect" class="new-modal-input"></select> <button style="margin:0; height:35px;line-height: 15px" class="modal-button" id="addClientButton">ADD</button></div><br>
-        <label for="fromDate">Start Date:</label>
-        <input type="datetime-local" id="fromDate" class="new-modal-input" onclick="this.showPicker()"><br>
-        <label for="toDate">End Date:</label>
-        <input type="datetime-local" id="toDate" class="new-modal-input" onclick="this.showPicker()"><br>
-        <label for="price">Price:</label>
-        <input type="number" id="price" class="new-modal-input" min="0" ><br>
-        <button class="modal-button" onclick="createReservation()">Create Reservation</button>
-    </div>
-</div>
-
-<div id="searchReservationModal" class="new-modal-overlay none">
-    <div class="new-modal">
-        <button class="new-modal-close" onclick="closeSearchReservationModal()">x</button>
-        <h2>Search Reservations</h2>
-        <div id="searchForm">
-            <label for="searchName">Client Name:</label>
-            <input type="text" id="searchName" class="new-modal-input" placeholder="Enter client's name or surname"><br>
-            <button class="modal-button" onclick="searchReservations()">Search</button>
+    <div class="header">
+        <div class="logo">
+            <img src="images/Logo.png" alt="logo">
         </div>
-        <button id="clearResultsBtn" class="modal-button" onclick="clearSearchResults()" style="display: none;">Back</button>
-        <div id="searchResults" style="margin-top: 20px;display: flex;flex-direction: column;gap: 20px;padding-bottom: 20px"></div>
+        <h1>Welcome to<i>META Parking!</i></h1>
+        <div></div>
+
+        <!--    <button class="button" id="clients">Add Client </button>-->
+        <!--    <button class="button" id="reservations">Add Reservation </button>-->
+        <!--    <button class="button" id="searchReservations">Search Reservations</button>-->
+
+
+        <nav id="sidebar" class="nav">
+            <ul>
+                <li>
+                    <div class="logo">
+                        <img src="images/Logo.png" alt="logo">
+                    </div>
+                </li>
+                <li><button id="clients"><img src="images/addClient.svg" alt="">Add Client</button></li>
+                <li><button id="reservations"><img src="images/calendar.svg" alt="">Add Reservation</button></li>
+                <li><button id="searchReservations"><img src="images/search.svg" alt=""> Search Reservations</button>
+                </li>
+            </ul>
+        </nav>
+        <div id="hamburgerMenu" class="nav-toggle">
+            <div class="nav-toggle-bar"></div>
+        </div>
+
     </div>
-</div>
+
+    <div class="button-container" id="buttonContainer">
+        <h3>Choose Time Period</h3>
+        <div>
+            <button class="button" onclick="startTransaction(0)">0</button>
+            <button class="button" onclick="startTransaction(1)">1hr</button>
+            <button class="button" onclick="startTransaction(2)">
+                <p>2hrs</p>
+            </button>
+            <button class="button" onclick="startTransaction(3)">3hrs</button>
+            <div> <button class="button custom" onclick="showCustomInput()">Custom</button>
+                <div id="customInput" style="display: none;">
+                    <input type="number" id="customHours" placeholder="Enter hours" class="modal-input">
+                    <button class="button" onclick="startCustomTransaction()">Create</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="reader" class="none" style="width: 400px;"></div>
+
+    <div id="modal" class="popup" style="display: none;">
+        <button onclick="closePopup()" id="close-btn">x</button>
+        <div id="ticketContent"></div>
+    </div>
+
+    <div id="clientModal" class="new-modal-overlay none">
+        <div class="new-modal">
+            <div class="new-modal-header">
+                <h2>Add Client</h2>
+                <button class="new-modal-close" onclick="closeClientModal()"><img src="images/X circle.svg"
+                        alt=""></button>
+            </div>
 
 
-<script>
-    const { ipcRenderer } = require('electron');
-    const QRCode = require("qrcode");
-    function generateQRCode(qrID) {
-        console.log("Generating QR code for ID:", qrID);
-        return new Promise((resolve, reject) => {
-            QRCode.toString(qrID, { type: 'svg' }, (err, svg) => {
-                if (err) {
-                    console.error('Error generating QR code:', err);
-                    reject(err);
-                } else {
-                    console.log("QR code generated successfully:", svg);
-                    resolve(svg);
-                }
+            <input type="text" id="firstName" class="new-modal-input" placeholder="First Name">
+
+            <input type="text" id="lastName" class="new-modal-input" placeholder="Last Name">
+
+            <input type="text" id="phoneNumber" class="new-modal-input" placeholder="Phone Number">
+            <button class="modal-button" onclick="addClient()">Save</button>
+        </div>
+    </div>
+
+    <div id="reservationModal" class="new-modal-overlay none">
+        <div class="new-modal">
+            <div class="new-modal-header">
+                <h2>Create Reservation</h2>
+                <button class="new-modal-close" onclick="closeReservationModal()"><img src="images/X circle.svg"
+                        alt=""></button>
+            </div>
+
+
+            <div style="display: flex;width: 100%; gap: 9px">
+                <select id="clientSelect" class="new-modal-input"></select>
+                <button class="modal-button" id="addClientButton">Add</button>
+            </div>
+            <div class="new-modal-input-dates">
+                <input type="datetime-local" id="fromDate" class="new-modal-input" onclick="this.showPicker()">
+
+                <input type="datetime-local" id="toDate" class="new-modal-input" onclick="this.showPicker()">
+            </div>
+
+
+            <input type="number" id="price" class="new-modal-input" min="0" placeholder="Price">
+            <button class="modal-button" onclick="createReservation()">Save</button>
+        </div>
+    </div>
+
+    <div id="searchReservationModal" class="new-modal-overlay none">
+        <div class="new-modal">
+            <div class="new-modal-header">
+                <h2>Search Reservations</h2>
+                <button class="new-modal-close" onclick="closeSearchReservationModal()"><img src="images/X circle.svg"
+                        alt=""></button>
+            </div>
+            <div id="searchForm">
+
+                <input type="text" id="searchName" class="new-modal-input" placeholder="Client Name or Surname">
+                <button class="modal-button" onclick="searchReservations()">Search</button>
+            </div>
+
+            <div id="searchResults"
+                style="margin-top: 20px;display: flex;flex-direction: column;gap: 20px;padding-bottom: 20px">
+            </div>
+            <button id="clearResultsBtn" class="modal-button" onclick="clearSearchResults()"
+                style="display: none;">Back</button>
+        </div>
+    </div>
+
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        const QRCode = require("qrcode");
+        function generateQRCode(qrID) {
+            console.log("Generating QR code for ID:", qrID);
+            return new Promise((resolve, reject) => {
+                QRCode.toString(qrID, { type: 'svg' }, (err, svg) => {
+                    if (err) {
+                        console.error('Error generating QR code:', err);
+                        reject(err);
+                    } else {
+                        console.log("QR code generated successfully:", svg);
+                        resolve(svg);
+                    }
+                });
             });
-        });
-    }
-
-
-    //hamburger menu
-    const hamburger = {
-        navToggle: document.getElementById('hamburgerMenu'),
-        nav: document.getElementById('sidebar'),
-        doToggle: function(e) {
-            e.preventDefault();
-            this.navToggle.classList.toggle('expanded');
-            this.nav.classList.toggle('expanded');
-        }
-    };
-    hamburger.navToggle.addEventListener('click', function(e) { hamburger.doToggle(e); });
-    hamburger.nav.addEventListener('click', function(e) { hamburger.doToggle(e); });
-
-
-
-    function closePopup() {
-        document.getElementById('modal').style.display = 'none';
-    }
-
-    function formattedDateTime(date) {
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${hours}:${minutes}`;
-    }
-
-    function formatDateTime(dateTime) {
-        const date = new Date(dateTime);
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${day}.${month}.${year} ${hours}:${minutes}`;
-    }
-
-
-    function formattedDate(date) {
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        return `${day}.${month}.${year}`;
-    }
-
-    function startTransaction(duration) {
-        const expiresAt = new Date();
-        if (duration > 0) {
-            expiresAt.setHours(expiresAt.getHours() + duration);
         }
 
-        ipcRenderer.send('store-transaction', { duration, expiresAt });
 
-        ipcRenderer.once('store-transaction-reply', (event, response) => {
-            printTicket(duration, new Date(), expiresAt, response.id.toString());
-        });
+        //hamburger menu
+        const hamburger = {
+            navToggle: document.getElementById('hamburgerMenu'),
+            nav: document.getElementById('sidebar'),
+            doToggle: function (e) {
+                e.preventDefault();
+                this.navToggle.classList.toggle('expanded');
+                this.nav.classList.toggle('expanded');
+            }
+        };
+        hamburger.navToggle.addEventListener('click', function (e) { hamburger.doToggle(e); });
+        hamburger.nav.addEventListener('click', function (e) { hamburger.doToggle(e); });
 
-        closeCustomTransaction();
-    }
 
-    function showCustomInput() {
-        document.getElementById('customInput').style.display = 'block';
-    }
 
-    function closeCustomTransaction() {
-        document.getElementById('customInput').style.display = 'none';
-    }
-
-    function startCustomTransaction() {
-        const customHours = parseInt(document.getElementById('customHours').value);
-        if (!isNaN(customHours) && customHours > 0) {
-            startTransaction(customHours);
-        } else {
-            alert('Please enter a valid number of hours.');
+        function closePopup() {
+            document.getElementById('modal').style.display = 'none';
         }
-    }
 
-    async function printTicket(duration, createdAt, expiresAt, qrID) {
-        const formattedCreatedAt = formattedDateTime(createdAt);
-        const formattedExpiresAt = formattedTime(expiresAt);
-        const dateToday = formattedDate(createdAt);
-        function formattedTime(date) {
+        function formattedDateTime(date) {
             const hours = String(date.getHours()).padStart(2, '0');
             const minutes = String(date.getMinutes()).padStart(2, '0');
             return `${hours}:${minutes}`;
         }
 
-        try {
-            const qrCodeSvg = await generateQRCode(qrID);
+        function formatDateTime(dateTime) {
+            const date = new Date(dateTime);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${day}.${month}.${year} ${hours}:${minutes}`;
+        }
 
-            let ticketContent = `
+
+        function formattedDate(date) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}.${month}.${year}`;
+        }
+
+        function startTransaction(duration) {
+            const expiresAt = new Date();
+            if (duration > 0) {
+                expiresAt.setHours(expiresAt.getHours() + duration);
+            }
+
+            ipcRenderer.send('store-transaction', { duration, expiresAt });
+
+            ipcRenderer.once('store-transaction-reply', (event, response) => {
+                printTicket(duration, new Date(), expiresAt, response.id.toString());
+            });
+
+            closeCustomTransaction();
+        }
+
+        function showCustomInput() {
+            document.getElementById('customInput').style.display = 'block';
+        }
+
+        function closeCustomTransaction() {
+            document.getElementById('customInput').style.display = 'none';
+        }
+
+        function startCustomTransaction() {
+            const customHours = parseInt(document.getElementById('customHours').value);
+            if (!isNaN(customHours) && customHours > 0) {
+                startTransaction(customHours);
+            } else {
+                alert('Please enter a valid number of hours.');
+            }
+        }
+
+        async function printTicket(duration, createdAt, expiresAt, qrID) {
+            const formattedCreatedAt = formattedDateTime(createdAt);
+            const formattedExpiresAt = formattedTime(expiresAt);
+            const dateToday = formattedDate(createdAt);
+            function formattedTime(date) {
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                return `${hours}:${minutes}`;
+            }
+
+            try {
+                const qrCodeSvg = await generateQRCode(qrID);
+
+                let ticketContent = `
                     <p style="font-size:40px;font-weight:900;text-align:center;margin:0;">Parking Meta</p>
                     <p style="text-align: center;margin:0;font-size:30px">${dateToday}</p>
                     <div class="box" style="margin:0; display:flex; justify-content:center; width:200px">${qrCodeSvg}</div>
                     <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px";><h3 style="font-size:20px">Entrance:</h3><p style="font-size:25px">${formattedCreatedAt}</p></div>
                 `;
 
-            if (duration > 0) {
-                ticketContent += `
+                if (duration > 0) {
+                    ticketContent += `
                         <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px";><h3 style="font-size:20px">Duration:</h3><p style="font-size:25px">${duration} hour${duration > 1 ? 's' : ''}</p></div>
                         <div style="display:flex;justify-content:space-between;align-items:center;margin:0;width:100%; height:30px;"><h3 style="font-size:20px">Expiring At:</h3><p style="font-weight:700; font-size:25px;">${formattedExpiresAt}</p></div>
                     `;
+                }
+
+                ticketContent += `</div>`;
+
+                document.getElementById('modal').style.display = 'flex';
+                document.getElementById('ticketContent').innerHTML = ticketContent;
+                document.getElementById('ticketContent').style.width = "70%"
+                document.getElementById('ticketContent').style.display = "flex"
+                document.getElementById('ticketContent').style.flexDirection = "column"
+                document.getElementById('ticketContent').style.alignItems = "center"
+
+                document.getElementById('modal').style.height = '380px';
+                document.getElementById('close-btn').style.display = 'none';
+                document.getElementById('close-btn').style.width = '350x';
+
+                setTimeout(() => {
+                    closePopup();
+                    document.getElementById('ticketContent').style.width = "auto"
+                    document.getElementById('modal').style.height = '300px';
+                    document.getElementById('close-btn').style.display = 'block';
+                }, 3000);
+            } catch (e) {
+                console.error('Error generating QR code:', e);
             }
-
-            ticketContent += `</div>`;
-
-            document.getElementById('modal').style.display = 'flex';
-            document.getElementById('ticketContent').innerHTML = ticketContent;
-            document.getElementById('ticketContent').style.width="70%"
-            document.getElementById('ticketContent').style.display="flex"
-            document.getElementById('ticketContent').style.flexDirection="column"
-            document.getElementById('ticketContent').style.alignItems="center"
-
-            document.getElementById('modal').style.height = '380px';
-            document.getElementById('close-btn').style.display = 'none';
-            document.getElementById('close-btn').style.width = '350x';
-
-            setTimeout(() => {
-                closePopup();
-                document.getElementById('ticketContent').style.width="auto"
-                document.getElementById('modal').style.height = '300px';
-                document.getElementById('close-btn').style.display = 'block';
-            }, 3000);
-        } catch (e) {
-            console.error('Error generating QR code:', e);
-        }
-    }
-
-    function openClientModal() {
-        document.getElementById('firstName').value = '';
-        document.getElementById('lastName').value = '';
-        document.getElementById('phoneNumber').value = '';
-
-        document.getElementById('clientModal').style.display = 'flex';
-    }
-
-
-    function closeClientModal() {
-        document.getElementById('clientModal').style.display = 'none';
-    }
-
-    function addClient() {
-        const firstName = document.getElementById('firstName').value.trim();
-        const lastName = document.getElementById('lastName').value.trim();
-        const phoneNumber = document.getElementById('phoneNumber').value.trim();
-
-        if (!firstName ||!lastName ||!phoneNumber) {
-            alert('Please fill out all fields.');
-            return;
         }
 
-        ipcRenderer.send('add-client', { firstName, lastName, phoneNumber });
-        closeClientModal();
-        ipcRenderer.once('add-client-reply', (event, response) => {
-            if (response.success) {
-                ipcRenderer.send('update-client-list');
+        function openClientModal() {
+            document.getElementById('firstName').value = '';
+            document.getElementById('lastName').value = '';
+            document.getElementById('phoneNumber').value = '';
+
+            document.getElementById('clientModal').style.display = 'flex';
+        }
+
+
+        function closeClientModal() {
+            document.getElementById('clientModal').style.display = 'none';
+        }
+
+        function addClient() {
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+
+            if (!firstName || !lastName || !phoneNumber) {
+                alert('Please fill out all fields.');
+                return;
             }
-        });
-    }
 
-
-
-    function openReservationModal() {
-        document.getElementById('clientSelect').innerHTML = '<option value="">Select a client</option>';
-        document.getElementById('fromDate').value = '';
-        document.getElementById('toDate').value = '';
-        document.getElementById('price').value = '';
-
-        document.getElementById('reservationModal').style.display = 'flex';
-
-        ipcRenderer.send('get-clients');
-
-        ipcRenderer.once('get-clients-reply', (event, clients) => {
-            const clientSelect = document.getElementById('clientSelect');
-            clientSelect.innerHTML = '<option value="">Select a client</option>';
-
-            clients.forEach(client => {
-                const option = document.createElement('option');
-                option.value = client.id;
-                option.textContent = `${client.first_name} ${client.last_name}`;
-                clientSelect.appendChild(option);
+            ipcRenderer.send('add-client', { firstName, lastName, phoneNumber });
+            closeClientModal();
+            ipcRenderer.once('add-client-reply', (event, response) => {
+                if (response.success) {
+                    ipcRenderer.send('update-client-list');
+                }
             });
-        });
-    }
-
-
-    function closeReservationModal() {
-        document.getElementById('reservationModal').style.display = 'none';
-    }
-
-    function createReservation() {
-        const clientId = parseInt(document.getElementById('clientSelect').value);
-        const fromDate = new Date(document.getElementById('fromDate').value);
-        const toDate = new Date(document.getElementById('toDate').value);
-        const price = parseFloat(document.getElementById('price').value);
-
-        if (isNaN(clientId) || !fromDate || !toDate || isNaN(price)) {
-            alert('Please fill out all fields correctly.');
-            return;
         }
 
-        if (fromDate >= toDate) {
-            alert('The "From Date" must be earlier than the "To Date".');
-            return;
+
+
+        function openReservationModal() {
+            document.getElementById('clientSelect').innerHTML = '<option value="">Select a client</option>';
+            document.getElementById('fromDate').value = '';
+            document.getElementById('toDate').value = '';
+            document.getElementById('price').value = '';
+
+            document.getElementById('reservationModal').style.display = 'flex';
+
+            ipcRenderer.send('get-clients');
+
+            ipcRenderer.once('get-clients-reply', (event, clients) => {
+                const clientSelect = document.getElementById('clientSelect');
+                clientSelect.innerHTML = '<option value="">Select a client</option>';
+
+                clients.forEach(client => {
+                    const option = document.createElement('option');
+                    option.value = client.id;
+                    option.textContent = `${client.first_name} ${client.last_name}`;
+                    clientSelect.appendChild(option);
+                });
+            });
         }
 
-        ipcRenderer.send('create-reservation', { clientId, fromDate: fromDate.toISOString(), toDate: toDate.toISOString(), price });
 
-        ipcRenderer.once('create-reservation-reply', (event, response) => {
-            if (response.success) {
-                closeReservationModal();
-            } else {
-                alert('Failed to create reservation.');
+        function closeReservationModal() {
+            document.getElementById('reservationModal').style.display = 'none';
+        }
+
+        function createReservation() {
+            const clientId = parseInt(document.getElementById('clientSelect').value);
+            const fromDate = new Date(document.getElementById('fromDate').value);
+            const toDate = new Date(document.getElementById('toDate').value);
+            const price = parseFloat(document.getElementById('price').value);
+
+            if (isNaN(clientId) || !fromDate || !toDate || isNaN(price)) {
+                alert('Please fill out all fields correctly.');
+                return;
             }
-        });
-    }
 
+            if (fromDate >= toDate) {
+                alert('The "From Date" must be earlier than the "To Date".');
+                return;
+            }
 
-    function openSearchReservationModal() {
-        document.getElementById('searchReservationModal').style.display = 'flex';
-        document.getElementById('searchForm').style.display = 'block';
-        document.getElementById('clearResultsBtn').style.display = 'none';
-        document.getElementById('searchResults').innerHTML = '';
-    }
+            ipcRenderer.send('create-reservation', { clientId, fromDate: fromDate.toISOString(), toDate: toDate.toISOString(), price });
 
-    function closeSearchReservationModal() {
-        document.getElementById('searchReservationModal').style.display = 'none';
-        document.getElementById('searchName').value = '';
-        document.getElementById('searchResults').innerHTML = '';
-    }
-
-    function searchReservations() {
-        const query = document.getElementById('searchName').value.trim();
-        if (!query) {
-            alert('Please enter a search query.');
-            return;
+            ipcRenderer.once('create-reservation-reply', (event, response) => {
+                if (response.success) {
+                    closeReservationModal();
+                } else {
+                    alert('Failed to create reservation.');
+                }
+            });
         }
 
-        ipcRenderer.send('search-reservations', query);
-    }
 
-    ipcRenderer.on('search-reservations-reply', (event, reservations) => {
-        const resultsDiv = document.getElementById('searchResults');
-        const searchForm = document.getElementById('searchForm');
-        const clearResultsBtn = document.getElementById('clearResultsBtn');
-
-        searchForm.style.display = 'none';
-        clearResultsBtn.style.display = 'block';
-        resultsDiv.innerHTML = '';
-
-        if (reservations.length === 0) {
-            resultsDiv.innerHTML = '<p>No reservations found.</p>';
-            return;
+        function openSearchReservationModal() {
+            document.getElementById('searchReservationModal').style.display = 'flex';
+            document.getElementById('searchForm').style.display = 'block';
+            document.getElementById('clearResultsBtn').style.display = 'none';
+            document.getElementById('searchResults').innerHTML = '';
         }
 
-        reservations.forEach(reservation => {
-            const startDate = new Date(reservation.from_date);
-            const endDate = new Date(reservation.to_date);
-            const differenceInMs = endDate - startDate;
-            const differenceInDays = Math.ceil(differenceInMs / (1000 * 60 * 60 * 24)) + 1;
-            const reservationDiv = document.createElement('div');
-            reservationDiv.innerHTML = `
+        function closeSearchReservationModal() {
+            document.getElementById('searchReservationModal').style.display = 'none';
+            document.getElementById('searchName').value = '';
+            document.getElementById('searchResults').innerHTML = '';
+        }
+
+        function searchReservations() {
+            const query = document.getElementById('searchName').value.trim();
+            if (!query) {
+                alert('Please enter a search query.');
+                return;
+            }
+
+            ipcRenderer.send('search-reservations', query);
+        }
+
+        ipcRenderer.on('search-reservations-reply', (event, reservations) => {
+            const resultsDiv = document.getElementById('searchResults');
+            const searchForm = document.getElementById('searchForm');
+            const clearResultsBtn = document.getElementById('clearResultsBtn');
+
+            searchForm.style.display = 'none';
+            clearResultsBtn.style.display = 'block';
+            resultsDiv.innerHTML = '';
+
+            if (reservations.length === 0) {
+                resultsDiv.innerHTML = '<p>NO RESERVATION FOUND!</p>';
+
+                return;
+            }
+
+            reservations.forEach(reservation => {
+                const startDate = new Date(reservation.from_date);
+                const endDate = new Date(reservation.to_date);
+                const differenceInMs = endDate - startDate;
+                const differenceInDays = Math.ceil(differenceInMs / (1000 * 60 * 60 * 24)) + 1;
+                const reservationDiv = document.createElement('div');
+                reservationDiv.innerHTML = `
         <h3>Reservation ID: ${reservation.id}</h3>
         <p>Client: ${reservation.client_name}</p>
         <p>Phone Number: ${reservation.client_number}</p>
@@ -383,49 +420,50 @@
         <p>Days: ${differenceInDays}</p>
         <p>Price: ${reservation.price}</p>
     `;
-            resultsDiv.appendChild(reservationDiv);
+                resultsDiv.appendChild(reservationDiv);
+            });
         });
-    });
 
-    function clearSearchResults() {
-        document.getElementById('searchResults').innerHTML = '';
-        document.getElementById('searchForm').style.display = 'block';
-        document.getElementById('clearResultsBtn').style.display = 'none';
-    }
+        function clearSearchResults() {
+            document.getElementById('searchResults').innerHTML = '';
+            document.getElementById('searchForm').style.display = 'block';
+            document.getElementById('clearResultsBtn').style.display = 'none';
+        }
 
 
-    document.getElementById('addClientButton').addEventListener('click', () => {
-        openClientModal();
-        ipcRenderer.send('get-clients');
-    });
-    document.getElementById('clients').addEventListener('click', openClientModal);
-    document.getElementById('reservations').addEventListener('click', openReservationModal);
-    document.getElementById('searchReservations').addEventListener('click', openSearchReservationModal);
-    ipcRenderer.on('load-clients', (event, clients) => {
-        const clientSelect = document.getElementById('clientSelect');
-        clientSelect.innerHTML = '<option value="">Select a client</option>';
-        clients.forEach(client => {
-            const option = document.createElement('option');
-            option.value = client.id;
-            option.textContent = `${client.first_name} ${client.last_name}`;
-            clientSelect.appendChild(option);
+        document.getElementById('addClientButton').addEventListener('click', () => {
+            openClientModal();
+            ipcRenderer.send('get-clients');
         });
-    });
-
-    ipcRenderer.on('update-client-list', (event, clients) => {
-        const clientSelect = document.getElementById('clientSelect');
-        clientSelect.innerHTML = '<option value="">Select a client</option>';
-        clients.forEach(client => {
-            const option = document.createElement('option');
-            option.value = client.id;
-            option.textContent = `${client.first_name} ${client.last_name}`;
-            clientSelect.appendChild(option);
+        document.getElementById('clients').addEventListener('click', openClientModal);
+        document.getElementById('reservations').addEventListener('click', openReservationModal);
+        document.getElementById('searchReservations').addEventListener('click', openSearchReservationModal);
+        ipcRenderer.on('load-clients', (event, clients) => {
+            const clientSelect = document.getElementById('clientSelect');
+            clientSelect.innerHTML = '<option value="">Select a client</option>';
+            clients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.id;
+                option.textContent = `${client.first_name} ${client.last_name}`;
+                clientSelect.appendChild(option);
+            });
         });
-        clientSelect.selectedIndex = clients.length;
-    });
+
+        ipcRenderer.on('update-client-list', (event, clients) => {
+            const clientSelect = document.getElementById('clientSelect');
+            clientSelect.innerHTML = '<option value="">Select a client</option>';
+            clients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.id;
+                option.textContent = `${client.first_name} ${client.last_name}`;
+                clientSelect.appendChild(option);
+            });
+            clientSelect.selectedIndex = clients.length;
+        });
 
 
-</script>
+    </script>
 
 </body>
+
 </html>

@@ -1,0 +1,47 @@
+<svg width="29" height="28" viewBox="0 0 29 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="29" height="28" fill="#F5F5F5"/>
+<g id="META Web App">
+<path d="M-1920 -941C-1920 -942.105 -1919.1 -943 -1918 -943H2214C2215.1 -943 2216 -942.105 2216 -941V2090C2216 2091.1 2215.1 2092 2214 2092H-1918C-1919.1 2092 -1920 2091.1 -1920 2090V-941Z" fill="#262424"/>
+<path d="M-1918 -942H2214V-944H-1918V-942ZM2215 -941V2090H2217V-941H2215ZM2214 2091H-1918V2093H2214V2091ZM-1919 2090V-941H-1921V2090H-1919ZM-1918 2091C-1918.55 2091 -1919 2090.55 -1919 2090H-1921C-1921 2091.66 -1919.66 2093 -1918 2093V2091ZM2215 2090C2215 2090.55 2214.55 2091 2214 2091V2093C2215.66 2093 2217 2091.66 2217 2090H2215ZM2214 -942C2214.55 -942 2215 -941.552 2215 -941H2217C2217 -942.657 2215.66 -944 2214 -944V-942ZM-1918 -944C-1919.66 -944 -1921 -942.657 -1921 -941H-1919C-1919 -941.552 -1918.55 -942 -1918 -942V-944Z" fill="black" fill-opacity="0.1"/>
+<g id="Menu">
+<rect id="Rectangle 5" x="-48" y="-418" width="430" height="1023" fill="#F7F7F8"/>
+<g id="Group 16">
+<g id="Rectangle 3" filter="url(#filter0_bd_29_248)">
+<rect x="-30" y="-26" width="394" height="80" rx="16" fill="white"/>
+</g>
+<path id="Icon (Stroke)" fill-rule="evenodd" clip-rule="evenodd" d="M12.9635 2.65089C7.42177 2.65089 2.92932 7.10155 2.92932 12.5917C2.92932 18.0819 7.42177 22.5325 12.9635 22.5325C15.6692 22.5325 18.1248 21.4716 19.9295 19.7467C19.9657 19.6996 20.0055 19.6543 20.049 19.6113C20.0924 19.5683 20.1381 19.5288 20.1856 19.4929C21.9267 17.705 22.9977 15.2723 22.9977 12.5917C22.9977 7.10155 18.5052 2.65089 12.9635 2.65089ZM22.8472 20.509C24.6147 18.3461 25.6734 15.5914 25.6734 12.5917C25.6734 5.6375 19.983 0 12.9635 0C5.94398 0 0.25354 5.6375 0.25354 12.5917C0.25354 19.5459 5.94398 25.1834 12.9635 25.1834C15.9913 25.1834 18.7719 24.1345 20.9551 22.3835L26.2325 27.6118C26.755 28.1294 27.6021 28.1294 28.1246 27.6118C28.6471 27.0942 28.6471 26.2549 28.1246 25.7373L22.8472 20.509Z" fill="#F6DF08"/>
+</g>
+<g id="Group 17">
+<g id="Rectangle 3_2" filter="url(#filter1_bd_29_248)">
+<rect x="-30" y="-122" width="394" height="80" rx="16" fill="white"/>
+</g>
+</g>
+</g>
+</g>
+<defs>
+<filter id="filter0_bd_29_248" x="-189.4" y="-185.4" width="712.8" height="398.8" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feGaussianBlur in="BackgroundImageFix" stdDeviation="79.7"/>
+<feComposite in2="SourceAlpha" operator="in" result="effect1_backgroundBlur_29_248"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="-12"/>
+<feGaussianBlur stdDeviation="32.95"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0.739323 0 0 0 0 0.739323 0 0 0 0 0.739323 0 0 0 0.15 0"/>
+<feBlend mode="normal" in2="effect1_backgroundBlur_29_248" result="effect2_dropShadow_29_248"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect2_dropShadow_29_248" result="shape"/>
+</filter>
+<filter id="filter1_bd_29_248" x="-189.4" y="-281.4" width="712.8" height="398.8" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feGaussianBlur in="BackgroundImageFix" stdDeviation="79.7"/>
+<feComposite in2="SourceAlpha" operator="in" result="effect1_backgroundBlur_29_248"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="-12"/>
+<feGaussianBlur stdDeviation="32.95"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0.739323 0 0 0 0 0.739323 0 0 0 0 0.739323 0 0 0 0.15 0"/>
+<feBlend mode="normal" in2="effect1_backgroundBlur_29_248" result="effect2_dropShadow_29_248"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect2_dropShadow_29_248" result="shape"/>
+</filter>
+</defs>
+</svg>

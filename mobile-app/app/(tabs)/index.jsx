@@ -103,13 +103,13 @@ export default function HomeScreen() {
 
               <View style={styles.buttonsDiv}>
 
-                <View style={styles.buttons}>
-                  <Button style={styles.button} title={"Transac"} onPress={() => {setScannerDisplay(prev => !prev);setScanType(0)}} />
-                  {/*<Button style={styles.button} title={"Reserv"} onPress={() => {setScannerDisplay(prev => !prev);setScanType(1)}}  />*/}
-                </View>
-
                 <View style={styles.dataView}>
                   <Text>{resData}</Text>
+                </View>
+
+                <View style={styles.buttons}>
+                  <Button style={styles.button} title={"Transactions"} onPress={() => {setScannerDisplay(prev => !prev);setScanType(0)}} />
+                  {/*<Button style={styles.button} title={"Reserv"} onPress={() => {setScannerDisplay(prev => !prev);setScanType(1)}}  />*/}
                 </View>
 
               </View>
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   buttons: {
     display: "flex",
     flexDirection: "column",
-    width: "70%",
+    width: "90%",
     gap: 10,
     justifyContent:"space-around",
     margin:10
@@ -166,7 +166,6 @@ const styles = StyleSheet.create({
   dataView: {
     width: 250,
     height: 300,
-    // backgroundColor: "#030303"
   },
   cameraContainer: {
     width: '80%',
@@ -179,9 +178,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   button: {
-    width: 150,
-    height:75,
-    padding: 20,
-    marginTop: 10
+    width: "250px",
+    height: "150px",
+    padding: "20px",
+    marginTop: 10,
   }
 });
