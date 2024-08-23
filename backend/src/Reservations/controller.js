@@ -21,9 +21,14 @@ router.get("/", async (req, res) => {
 });
 
 router.get("/search", async (req, res) => {
-    const { q } = req.query;
-    try {
-        db.all(`
+    const { q, y } = req.query;
+
+    if(!y || y == undefined || y==null){
+
+        console.log("no filter")
+
+        try {
+            db.all(`
             SELECT r.id,
                    c.first_name || ' ' || c.last_name AS client_name,
                    r.from_date,
@@ -34,15 +39,43 @@ router.get("/search", async (req, res) => {
                      JOIN clients c ON r.client_id = c.id
             WHERE c.first_name LIKE ? OR c.last_name LIKE ?
         `, [`%${q}%`, `%${q}%`], (err, rows) => {
-            if (err) {
-                console.error('Error searching reservations:', err);
-                res.status(500).json({error: err});
-            } else {
-                res.json(rows);
-            }
-        });
-    } catch (e) {
-        res.status(500).json({error: e});
+                if (err) {
+                    console.error('Error searching reservations:', err);
+                    res.status(500).json({error: err});
+                } else {
+                    res.json(rows);
+                }
+            });
+        } catch (e) {
+            res.status(500).json({error: e});
+        }
+    }
+    else{
+        console.log("with filter")
+
+        try {
+            db.all(`
+        SELECT r.id,
+               c.first_name || ' ' || c.last_name AS client_name,
+               r.from_date,
+               r.to_date,
+               r.price,
+               c.phone_number AS client_number
+        FROM reservations r
+                 JOIN clients c ON r.client_id = c.id
+        WHERE (c.first_name LIKE ? OR c.last_name LIKE ?)
+          AND strftime('%Y', r.from_date) = ?
+    `, [`%${q}%`, `%${q}%`, y], (err, rows) => {
+                if (err) {
+                    console.error('Error searching reservations:', err);
+                    res.status(500).json({error: err});
+                } else {
+                    res.json(rows);
+                }
+            });
+        } catch (e) {
+            res.status(500).json({error: e});
+        }
     }
 });
 
