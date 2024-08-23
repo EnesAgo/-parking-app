@@ -1,6 +1,11 @@
 * {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
+html,
+body {
+  width: 100%;
+  height: 100vh;
+}
 
 body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -15,19 +20,17 @@ body {
   justify-content: center;
   height: 100vh;
 }
+h1 {
+  font-size: 40px;
+}
 
 .header {
-  max-width: 1440px;
   width: 100%;
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   align-items: center;
   position: absolute;
-  top: 164px;
-  left: 142px;
-}
-.header * {
-  margin: 0 20px;
+  top: 50px;
 }
 
 .header .logo img {
@@ -38,6 +41,21 @@ body {
   height: 70px;
 }
 
+#shadow {
+  display: none;
+  position: fixed;
+  z-index: 5500;
+  /* pointer-events: none; */
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.3);
+  width: 120%;
+  height: 100%;
+  top: 0;
+  left: -10%;
+}
+#shadow.expanded {
+  display: block;
+}
 .nav {
   -webkit-transition: right 0.5s ease;
   -moz-transition: right 0.5s ease;
@@ -46,7 +64,6 @@ body {
   transition: right 0.5s ease;
   background: #f7f7f8;
   color: #f7f7f8;
-  cursor: pointer;
   font-size: 2rem;
   height: 100vh;
   right: -40rem;
@@ -54,12 +71,12 @@ body {
   position: fixed;
   top: 0;
   width: 430px;
-  z-index: 1;
+  z-index: 6000;
   display: flex;
   justify-content: center;
 }
 .nav.expanded {
-  right: -2rem;
+  right: 0;
 }
 .nav ul {
   list-style: none;
@@ -100,65 +117,41 @@ body {
   margin-bottom: 65px;
 }
 
+#hamburgerMenu {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  background: #fff;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  padding: 4px 4px;
+}
+#hamburgerMenu.expanded {
+  background: none;
+}
 .nav-toggle {
   -webkit-user-select: none;
   -moz-user-select: none;
   user-select: none;
   cursor: pointer;
-  height: 2rem;
-  right: 2rem;
-  position: fixed;
-  top: 2rem;
-  width: 2.4rem;
+
+  width: 40px;
   z-index: 2;
 }
 .nav-toggle:hover {
   opacity: 0.8;
 }
-.nav-toggle .nav-toggle-bar,
-.nav-toggle .nav-toggle-bar::after,
-.nav-toggle .nav-toggle-bar::before {
-  position: absolute;
-  top: 50%;
-  -webkit-transform: translateY(-50%);
-  -ms-transform: translateY(-50%);
-  transform: translateY(-50%);
-  -webkit-transition: all 0.5s ease;
-  -moz-transition: all 0.5s ease;
-  -ms-transition: all 0.5s ease;
-  -o-transition: all 0.5s ease;
-  transition: all 0.5s ease;
-  background: black;
-  content: "";
-  height: 0.2rem;
-  width: 100%;
-}
+
 .nav-toggle .nav-toggle-bar {
-  margin-top: 0;
-}
-.nav-toggle .nav-toggle-bar::after {
-  margin-top: 0.5rem;
-}
-.nav-toggle .nav-toggle-bar::before {
-  margin-top: -0.5rem;
+  background: #000;
+  height: 3px;
+  border-radius: 30px;
+  width: 70%;
+  box-shadow: 0 8px, 0 -8px;
 }
 .nav-toggle.expanded .nav-toggle-bar {
-  background: transparent;
-}
-.nav-toggle.expanded .nav-toggle-bar::after,
-.nav-toggle.expanded .nav-toggle-bar::before {
-  background: white;
-  margin-top: 0;
-}
-.nav-toggle.expanded .nav-toggle-bar::after {
-  -ms-transform: rotate(45deg);
-  -webkit-transform: rotate(45deg);
-  transform: rotate(45deg);
-}
-.nav-toggle.expanded .nav-toggle-bar::before {
-  -ms-transform: rotate(-45deg);
-  -webkit-transform: rotate(-45deg);
-  transform: rotate(-45deg);
+  display: none;
 }
 
 .button-container {
@@ -168,10 +161,17 @@ body {
   background-color: #ffffff;
   box-shadow: 0px -12px 65.9px 0px rgba(189, 189, 189, 0.15);
 }
+.button-container h3 {
+  margin: 0;
+  margin-bottom: 24px;
+  color: #1c1a1a;
+  font-size: 32px;
+  font-weight: 700;
+}
 
 .button {
-  margin-bottom: 10px;
-  padding: 17px ;
+  margin-bottom: 16px;
+  padding: 17px;
   width: 160px;
   font-size: 18px;
   font-weight: bold;
@@ -195,6 +195,7 @@ body {
   width: 100%;
   color: black;
   display: block;
+  margin: 0;
 }
 
 #customInput {
@@ -232,9 +233,6 @@ body {
 }
 
 #close-btn {
-  position: absolute;
-  right: 15px;
-  top: 10px;
   cursor: pointer;
   border: none;
   background: none;
@@ -275,11 +273,16 @@ body {
   color: #ff0000;
 }
 .modal-input {
-  width: calc(100% - 20px);
-  padding: 8px;
-  margin-bottom: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  /* width: calc(100% - 20px); */
+  box-sizing: border-box;
+  width: 100%;
+  padding: 23px 32px;
+
+  border: none;
+  border-radius: 8px;
+  background-color: #f7f7f8;
+  cursor: pointer;
+  font-size: 16px;
 }
 .modal-content button {
   margin-top: 10px;
@@ -322,6 +325,7 @@ body {
   top: 10px;
   right: 10px; */
   background: transparent;
+  padding: 0;
   border: none;
   width: 33px;
   color: #000;
@@ -340,6 +344,13 @@ body {
   width: 100%;
   gap: 9px;
 }
+.new-modal-input.search {
+  padding-left: 60px;
+  background: url(images/searchGrey.svg) no-repeat left;
+  background-position: 5%;
+  background-color: #f7f7f8;
+  background-size: 28px;
+}
 /* .new-modal-close:hover {
   color: #ff0000;
 } */
@@ -350,7 +361,7 @@ body {
   padding: 23px 32px;
 
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   background-color: #f7f7f8;
   cursor: pointer;
   font-size: 16px;
@@ -367,16 +378,18 @@ body {
   color: black;
   background-color: #f6df08;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
-.modal-button:hover {
-  background-color: #0056b3;
-}
+
 .modal-button:active {
-  background-color: #003d80;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+.filter-button {
+  padding: 0;
+  border: none;
+  border-radius: 8px;
 }
 
 #searchForm {
@@ -384,10 +397,10 @@ body {
   flex-direction: column;
   align-items: center;
   width: 100%;
+  gap: 16px;
 }
 
 #searchForm label {
-  display: block;
   margin-bottom: 8px;
   font-size: 14px;
   color: #555;
@@ -440,10 +453,7 @@ body {
 
 #searchResults p {
   margin: 0;
-
-  text-align: center;
   color: #1c1a1a;
-  text-align: center;
   font-size: 24px;
   font-weight: 700;
 }
@@ -455,4 +465,21 @@ body {
   .header {
     display: none;
   }
+}
+.footer {
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  position: absolute;
+  bottom: 100px;
+}
+.footer p {
+  color: #746464;
+  text-align: right;
+  font-family: "Segoe UI";
+  font-size: 16px;
+  font-style: italic;
+  font-weight: 400;
+  line-height: normal;
 }
