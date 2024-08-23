@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, Button, ScrollView, RefreshControl, SafeAreaView } from 'react-native';
+import { Text, View, StyleSheet, Pressable, ScrollView, RefreshControl, SafeAreaView } from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 import * as Updates from 'expo-updates';
 import { Camera } from 'expo-camera';
+import moment from 'moment-timezone'
 import HttpRequest from "../../requests/HttpRequest";
 
 const wait = (timeout) => {
@@ -45,7 +46,12 @@ export default function HomeScreen() {
         const newData = await HttpRequest.get(`/transactions/${data}`)
 
         console.log(newData)
-        setResData(JSON.stringify(newData.data))
+
+        const countHours = moment(new Date()).diff(moment(newData.data.expires_at), 'hours');
+        console.log(countHours)
+
+
+        setResData({...newData.data, countHours})
         // alert(response)
       } catch (e) {
         console.log({error: e})
@@ -87,7 +93,7 @@ export default function HomeScreen() {
           }
       >
 
-      <SafeAreaView contentContainerStyle={styles.container}>
+      <View style={styles.container}>
 
 
         {
@@ -103,12 +109,35 @@ export default function HomeScreen() {
 
               <View style={styles.buttonsDiv}>
 
-                <View style={styles.dataView}>
-                  <Text>{resData}</Text>
-                </View>
+                  {
+                    resData &&
+                      <View style={styles.dataView}>
+                        <View style={styles.textCol}>
+                          <Text style={styles.buttonText}>Start Date:</Text>
+                          <Text style={styles.buttonText}>{resData.created_at}</Text>
+                        </View>
+                        <View style={styles.textCol}>
+                          <Text style={styles.buttonText}>End Date:</Text>
+                          <Text style={styles.buttonText}>{resData.expires_at}</Text>
+                        </View>
+                        <View style={styles.textCol}>
+                          <Text style={styles.buttonText}>Leaved Date:</Text>
+                          <Text style={styles.buttonText}>{resData.leaved_at}</Text>
+                        </View>
+                        {
+                          resData.countHours>0 &&
+                          <View style={styles.textCol}>
+                            <Text style={styles.buttonText}>Hours Passed:</Text>
+                            <Text style={styles.buttonText}>{resData.countHours}</Text>
+                          </View>
+                        }
+                      </View>
+
+                  }
+                  {/*<Text>{resData}</Text>*/}
 
                 <View style={styles.buttons}>
-                  <Button style={styles.button} title={"Transactions"} onPress={() => {setScannerDisplay(prev => !prev);setScanType(0)}} />
+                  <Pressable style={styles.button} onPress={() => {setScannerDisplay(prev => !prev);setScanType(0)}}><Text style={styles.buttonText}>Transactions</Text></Pressable>
                   {/*<Button style={styles.button} title={"Reserv"} onPress={() => {setScannerDisplay(prev => !prev);setScanType(1)}}  />*/}
                 </View>
 
@@ -116,7 +145,7 @@ export default function HomeScreen() {
         }
 
 
-      </SafeAreaView>
+      </View>
 
       </ScrollView>
   );
@@ -132,28 +161,21 @@ const styles = StyleSheet.create({
     height:"100%",
     width:"100%"
   },
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  textCol: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    height: "40px",
+    marginHorizontal: "20px",
   },
   buttonsDiv: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent:"center",
-    width: "100%"
+    width: "100%",
+    height: "100%",
   },
   buttons: {
     display: "flex",
@@ -164,8 +186,11 @@ const styles = StyleSheet.create({
     margin:10
   },
   dataView: {
-    width: 250,
+    width: "90%",
     height: 300,
+    display: "flex",
+    flexDirection: "column",
+
   },
   cameraContainer: {
     width: '80%',
@@ -178,9 +203,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   button: {
-    width: "250px",
-    height: "150px",
-    padding: "20px",
-    marginTop: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 18,
+    paddingHorizontal: 44,
+    borderRadius: 4,
+    elevation: 3,
+    backgroundColor: '#F6DF08',
+  },
+  buttonText: {
+    fontSize: 16,
+    lineHeight: 21,
+    fontWeight: 'bold',
+    letterSpacing: 0.25,
+    color: '#000',
   }
 });
