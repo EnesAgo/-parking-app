@@ -344,6 +344,9 @@ h1 {
   width: 100%;
   gap: 9px;
 }
+.new-modal-input-dates input{
+  font-size: 14px;
+}
 .new-modal-input.search {
   padding-left: 60px;
   background: url(images/searchGrey.svg) no-repeat left;
@@ -418,12 +421,24 @@ h1 {
   font-size: 16px;
 } */
 
+.phoneInp{
+  position: relative;
+  width: 100%;
+  /*cursor: text;*/
+}
+.phoneInp p{
+  position: absolute;
+  left:15px;
+  top: 10%;
+  color: #a9a9a9;
+}
+
 #clearResultsBtn {
   display: none;
 }
 
 #clearResultsBtn:hover {
-  background: #5a6268;
+  background: #44484b;
 }
 
 #searchResults {
@@ -444,17 +459,38 @@ h1 {
   padding-top: 0;
   /*border-bottom: 1px solid #ddd;*/
 }
+.hidden-text {
+  text-indent: -9999px;
+  color: transparent;
+}
+
+.filterLabel{
+  position: relative;
+  margin: 0 !important;
+  /*cursor: pointer;*/
+}
+
+
+.filter-button{
+  position: absolute;
+  left:0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+
+}
 
 #searchResults h3 {
   margin: 0 0 5px;
-  font-size: 20px;
+  font-size: 16px;
   color: #333;
 }
 
 #searchResults p {
   margin: 0;
   color: #1c1a1a;
-  font-size: 24px;
+  font-size: 16px;
   font-weight: 700;
 }
 

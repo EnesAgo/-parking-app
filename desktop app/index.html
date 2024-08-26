@@ -101,7 +101,10 @@
 
             <input type="text" id="lastName" class="new-modal-input" placeholder="Last Name">
 
-            <input type="text" id="phoneNumber" class="new-modal-input" placeholder="Phone Number">
+            <label class="phoneInp">
+                <p>+</p>
+                <input type="number" id="phoneNumber" class="new-modal-input" placeholder="Phone Number">
+            </label>
             <button class="modal-button" onclick="addClient()">Save</button>
         </div>
     </div>
@@ -140,9 +143,18 @@
             </div>
             <div id="searchForm" style="display: flex;">
                 <div style="display: flex; width: 100%; gap: 16px;">
-                    <input type="text" id="searchName" class="new-modal-input search"
-                        placeholder="Client Name or Surname">
-                    <button class="filter-button"><img src="images/filter.svg" alt=""></button>
+                    <input type="text" class="new-modal-input search"
+                        placeholder="Client Name or Surname" id="searchName">
+
+<!--                    <button class="filter-button">-->
+                        <label class="filterLabel" >
+                            <img src="images/filter.svg" alt="">
+                            <select class="filter-button" id="filterSelect">
+                                <option class="hidden-text" selected="selected" value="">none</option>
+                                <option class="hidden-text" value="2024">2024</option>
+                            </select>
+                        </label>
+<!--                    </button>-->
                 </div>
                 <button class="modal-button" onclick="searchReservations()">Search</button>
             </div>
@@ -162,6 +174,7 @@
     <script>
         const { ipcRenderer } = require('electron');
         const QRCode = require("qrcode");
+        let searchFilter = '';
         function generateQRCode(qrID) {
             console.log("Generating QR code for ID:", qrID);
             return new Promise((resolve, reject) => {
@@ -416,6 +429,7 @@
             document.getElementById('searchForm').style.gap = '16px';
             document.getElementById('clearResultsBtn').style.display = 'none';
             document.getElementById('searchResults').innerHTML = '';
+            ipcRenderer.send('search-reservations', {query: '', searchFilter: ''});
         }
 
         function closeSearchReservationModal() {
@@ -426,21 +440,29 @@
 
         function searchReservations() {
             const query = document.getElementById('searchName').value.trim();
-            if (!query) {
-                alert('Please enter a search query.');
-                return;
+            // if (!query) {
+            //     alert('Please enter a search query.');
+            //     return;
+            // }
+
+            const obj = {
+                query: query,
+                searchFilter: searchFilter
             }
 
-            ipcRenderer.send('search-reservations', query);
+            ipcRenderer.send('search-reservations', obj);
         }
+
 
         ipcRenderer.on('search-reservations-reply', (event, reservations) => {
             const resultsDiv = document.getElementById('searchResults');
             const searchForm = document.getElementById('searchForm');
             const clearResultsBtn = document.getElementById('clearResultsBtn');
 
-            searchForm.style.display = 'none';
-            clearResultsBtn.style.display = 'block';
+            console.log(reservations)
+
+            // searchForm.style.display = 'none';
+            // clearResultsBtn.style.display = 'block';
             resultsDiv.innerHTML = '';
 
             if (reservations.length === 0) {
@@ -467,6 +489,12 @@
                 resultsDiv.appendChild(reservationDiv);
             });
         });
+
+
+        document.getElementById("filterSelect").addEventListener("change", (e) => {
+            console.log(e.target.value)
+            searchFilter = e.target.value
+        })
 
         function clearSearchResults() {
             document.getElementById('searchResults').innerHTML = '';

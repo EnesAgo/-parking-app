@@ -268,11 +268,12 @@ function createWindow() {
         }
     });
 
-    ipcMain.on('search-reservations', async (event, query) => {
+    ipcMain.on('search-reservations', async (event, data) => {
+
+        const { query, searchFilter } = data
+
         try {
-            const response = await axiosInstance(`${BASE_URL}/reservations/search`, {
-                params: { q: query }
-            });
+            const response = await axiosInstance(`${BASE_URL}/reservations/search`, { params: { q: query, y: searchFilter } });
             event.reply('search-reservations-reply', response.data);
         } catch (error) {
             console.error('Error searching reservations:', error);
@@ -341,3 +342,6 @@ app.on('activate', () => {
         createWindow();
     }
 });
+try {
+    require('electron-reloader')(module)
+} catch (_) { }

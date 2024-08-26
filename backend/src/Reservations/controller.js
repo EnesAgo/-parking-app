@@ -23,6 +23,8 @@ router.get("/", async (req, res) => {
 router.get("/search", async (req, res) => {
     const { q, y } = req.query;
 
+    console.log(req.query)
+
     if(!y || y == undefined || y==null){
 
         console.log("no filter")
